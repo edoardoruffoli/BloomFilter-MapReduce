@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;
 
@@ -17,17 +18,6 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     private int kHash;
     private BitSet bitset;
     private static final int hashType = MURMUR_HASH;
-
-    private static final byte[] bitvalues = new byte[] {
-        (byte)0x01,
-        (byte)0x02,
-        (byte)0x04,
-        (byte)0x08,
-        (byte)0x10,
-        (byte)0x20,
-        (byte)0x40,
-        (byte)0x80
-    };
 
     public  BloomFilter (){
 
@@ -121,42 +111,27 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     public void write(DataOutput dataOutput) throws IOException {
         dataOutput.writeInt(this.length);
         dataOutput.writeInt(this.kHash);
-        byte[] bytes = new byte[getNBytes()];
-        for(int i = 0, byteIndex = 0, bitIndex = 0; i < length; i++, bitIndex++) {
-            if (bitIndex == 8) {
-                bitIndex = 0;
-                byteIndex++;
-            }
-            if (bitIndex == 0) {
-                bytes[byteIndex] = 0;
-            }
-            if (bitset.get(i)) {
-                bytes[byteIndex] |= bitvalues[bitIndex];
-            }
+
+        // https://stackoverflow.com/questions/18406592/how-to-have-bit-string-in-hadoop
+        long[] longs = bitset.toLongArray();
+        dataOutput.writeInt(longs.length);
+        for (int i = 0; i < longs.length; i++) {
+            dataOutput.writeLong(longs[i]);
         }
-        dataOutput.write(bytes);
     }
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         length = dataInput.readInt();
         kHash = dataInput.readInt();
-        bitset = new BitSet(length);
-        byte[] bytes = new byte[getNBytes()];
-        dataInput.readFully(bytes);
-        for(int i = 0, byteIndex = 0, bitIndex = 0; i < length; i++, bitIndex++) {
-            if (bitIndex == 8) {
-                bitIndex = 0;
-                byteIndex++;
-            }
-            if ((bytes[byteIndex] & bitvalues[bitIndex]) != 0) {
-                bitset.set(i);
-            }
-        }
-    }
 
-    private int getNBytes(){
-        return (length + 7) / 8;
+        // https://stackoverflow.com/questions/18406592/how-to-have-bit-string-in-hadoop
+        long[] longs = new long[dataInput.readInt()];
+        for (int i = 0; i < longs.length; i++) {
+            longs[i] = dataInput.readLong();
+        }
+
+        bitset = BitSet.valueOf(longs);
     }
 
     public static void main(String[] args) throws Exception
