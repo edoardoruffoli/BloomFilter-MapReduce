@@ -1,8 +1,6 @@
 package it.unipi.dii.cloudcomputing;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
@@ -31,6 +29,10 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         (byte)0x80
     };
 
+    public  BloomFilter (){
+
+    }
+
     public BloomFilter(int length, int kHash){
         bitset = new BitSet(length);
         this.length = length;
@@ -42,7 +44,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
-            bitset.set(seed % bitset.length());
+            bitset.set(Math.abs(seed % length));
         }
     }
 
@@ -55,14 +57,14 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
-            if(!bitset.get(seed % bitset.length()))
+            if(!bitset.get(seed % length))
                 return false;
         }
         return true;
     }
 
     public static BloomFilter copy(final BloomFilter bf){
-        return new BloomFilter(bf.bitset.length(), bf.kHash);
+        return new BloomFilter(bf.length, bf.kHash);
     }
 
     public BitSet getBitset() {
@@ -104,7 +106,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         return "BloomFilter{" +
                 "bitset=" + bitset +
                 ", kHash=" + kHash +
-                ", length=" + bitset.length() +
+                ", length=" + length +
                 '}';
     }
 
@@ -120,7 +122,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         dataOutput.writeInt(this.length);
         dataOutput.writeInt(this.kHash);
         byte[] bytes = new byte[getNBytes()];
-        for(int i = 0, byteIndex = 0, bitIndex = 0; i < bitset.length(); i++, bitIndex++) {
+        for(int i = 0, byteIndex = 0, bitIndex = 0; i < length; i++, bitIndex++) {
             if (bitIndex == 8) {
                 bitIndex = 0;
                 byteIndex++;
@@ -139,7 +141,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     public void readFields(DataInput dataInput) throws IOException {
         length = dataInput.readInt();
         kHash = dataInput.readInt();
-        bitset = new BitSet(bitset.length());
+        bitset = new BitSet(length);
         byte[] bytes = new byte[getNBytes()];
         dataInput.readFully(bytes);
         for(int i = 0, byteIndex = 0, bitIndex = 0; i < length; i++, bitIndex++) {
@@ -154,6 +156,29 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     }
 
     private int getNBytes(){
-        return (bitset.length() + 7) / 8;
+        return (length + 7) / 8;
+    }
+
+    public static void main(String[] args) throws Exception
+    {
+        BloomFilter b = new BloomFilter(100,5);
+        b.add("tt10334");
+        b.add("tt14334");
+        b.add("tt10354");
+        b.add("tt20334");
+        b.add("tt14334");
+        b.add("tt19334");
+
+        ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
+        DataOutput out = new DataOutputStream(byteOutput);
+        b.write(out);
+
+        DataInput in = new DataInputStream(new ByteArrayInputStream(byteOutput.toByteArray()));
+        BloomFilter deserialized = new BloomFilter();
+        deserialized.readFields(in);
+
+        System.out.println(b.toString());
+
+        System.out.println(deserialized.toString());
     }
 }
