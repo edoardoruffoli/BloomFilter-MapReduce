@@ -57,7 +57,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
-            if(!bitset.get(seed % length))
+            if(!bitset.get(Math.abs(seed % length)))
                 return false;
         }
         return true;
@@ -180,5 +180,8 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         System.out.println(b.toString());
 
         System.out.println(deserialized.toString());
+
+        System.out.println(b.find("tt10334"));
+        System.out.println(b.find("tt50334"));
     }
 }
