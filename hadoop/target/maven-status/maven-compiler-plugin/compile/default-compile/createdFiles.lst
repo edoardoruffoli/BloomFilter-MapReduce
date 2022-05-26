@@ -1,0 +1,6 @@
+it\unipi\dii\cloudcomputing\mapreduce\BloomFilterCreation$BloomFilterCreationMapper.class
+it\unipi\dii\cloudcomputing\mapreduce\BloomFilterCreation$BloomFilterOrReducer.class
+it\unipi\dii\cloudcomputing\mapreduce\SizeEstimator$CountMapper.class
+it\unipi\dii\cloudcomputing\mapreduce\SizeEstimator$CountSumReducer.class
+it\unipi\dii\cloudcomputing\mapreduce\SizeEstimator.class
+it\unipi\dii\cloudcomputing\mapreduce\BloomFilterCreation.class

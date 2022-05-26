@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -55,8 +56,8 @@ public class BloomFilterCreation {
 
         public void reduce(IntWritable key, Iterable<BloomFilter> values, Context context) throws IOException, InterruptedException {
             result = new BloomFilter(values.iterator().next());
-            for (BloomFilter val : values) {
-                 result.or(val.getBitset());
+            while(values.iterator().hasNext()) {
+                 result.or(values.iterator().next().getBitset());
             }
 
             context.write(key, result);
@@ -68,18 +69,18 @@ public class BloomFilterCreation {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
         if (otherArgs.length != 2) {
-            System.err.println("Usage: MatrixMultiplication <input> <output>");
+            System.err.println("Usage: BloomFilterCreation <input> <output>");
             System.exit(1);
         }
         System.out.println("args[0]: <input>="  + otherArgs[0]);
         System.out.println("args[1]: <output>=" + otherArgs[1]);
 
-        Job job = Job.getInstance(conf, "MatrixMultiplication");
+        Job job = Job.getInstance(conf, "BloomFilterCreation");
 
         double p = 0.01;
 
-        FileInputStream fis=new FileInputStream("sizes.txt");
-        Scanner sc=new Scanner(fis);
+        FileInputStream fis = new FileInputStream("sizes.txt");
+        Scanner sc = new Scanner(fis);
         int i = 0;
         while (sc.hasNextLine()){
             String[] values = sc.nextLine().split("\t");
@@ -102,6 +103,10 @@ public class BloomFilterCreation {
         job.setOutputValueClass(BloomFilter.class);
 
         FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+
+        /*job.setInputFormatClass(NLineInputFormat.class);
+        NLineInputFormat.addInputPath(job, new Path(otherArgs[0]));
+        job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 800000);*/
         FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 
         job.setInputFormatClass(TextInputFormat.class);

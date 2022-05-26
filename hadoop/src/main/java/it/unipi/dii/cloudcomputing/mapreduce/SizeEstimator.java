@@ -1,9 +1,6 @@
 package it.unipi.dii.cloudcomputing.mapreduce;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
-
-import it.unipi.dii.cloudcomputing.IntArrayWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -14,7 +11,6 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 
 public class SizeEstimator {
     public static class CountMapper extends Mapper<Object, Text, IntWritable, IntWritable>{
