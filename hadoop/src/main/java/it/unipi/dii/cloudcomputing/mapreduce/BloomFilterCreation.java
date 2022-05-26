@@ -34,7 +34,7 @@ public class BloomFilterCreation {
             for (int i = 0; i <= 10; i++) {
                 m = Integer.parseInt(context.getConfiguration().get("m_"+i));
                 k = Integer.parseInt(context.getConfiguration().get("k_"+i));
-                bloomFilters.set(i, new BloomFilter(m, k));
+                bloomFilters.add(i, new BloomFilter(m, k));
             }
         }
 
