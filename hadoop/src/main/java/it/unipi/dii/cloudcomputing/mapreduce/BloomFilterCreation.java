@@ -2,6 +2,8 @@ package it.unipi.dii.cloudcomputing.mapreduce;
 
 import it.unipi.dii.cloudcomputing.BloomFilter;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -60,7 +62,18 @@ public class BloomFilterCreation {
                  result.or(values.iterator().next().getBitset());
             }
 
-            context.write(key, result);
+            // Save the final Bloom Filter in the file system
+            Path outputFilePath = new Path(context.getConfiguration().get("filter.output")
+                    + key.toString());
+            FileSystem fs = FileSystem.get(context.getConfiguration());
+
+            try (FSDataOutputStream fsdos = fs.create(outputFilePath)) {
+                result.write(fsdos);
+
+            } catch (Exception e) {
+                System.out.println(outputFilePath.toString());
+                throw new IOException("Error while writing bloom filter to file system.", e);
+            }
         }
     }
 
@@ -92,6 +105,10 @@ public class BloomFilterCreation {
             job.getConfiguration().set("k_"+i, String.valueOf(k));
             i++;
         }
+
+        // Output parameter (sent to Reducer who will write the bloom filter to file system)
+        String filterOutput = args[1] + Path.SEPARATOR + "filter";
+        job.getConfiguration().set("filter.output", filterOutput);
 
         job.setJarByClass(BloomFilterCreation.class);
         job.setMapperClass(BloomFilterCreationMapper.class);

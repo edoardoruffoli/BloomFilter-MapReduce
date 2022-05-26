@@ -93,11 +93,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
 
     @Override
     public String toString() {
-        return "BloomFilter{" +
-                "bitset=" + bitset +
-                ", kHash=" + kHash +
-                ", length=" + length +
-                '}';
+        return bitset.toString();
     }
 
     @Override
