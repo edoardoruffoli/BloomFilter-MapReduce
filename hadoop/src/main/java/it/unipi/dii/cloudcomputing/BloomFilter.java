@@ -9,6 +9,8 @@ import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;
 
+import javax.swing.text.StyledEditorKit;
+
 import static org.apache.hadoop.util.hash.Hash.MURMUR_HASH;
 
 import java.util.Objects;
@@ -27,6 +29,13 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         bitset = new BitSet(length);
         this.length = length;
         this.kHash = kHash;
+    }
+
+    public BloomFilter(BloomFilter bf){
+        this.bitset = (BitSet) bf.bitset.clone();
+        this.length = bf.length;
+        this.kHash = bf.kHash;
+
     }
 
     public void add(String id){
