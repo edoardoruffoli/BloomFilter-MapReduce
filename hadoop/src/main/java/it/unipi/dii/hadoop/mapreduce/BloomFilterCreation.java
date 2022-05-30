@@ -1,6 +1,6 @@
-package it.unipi.dii.cloudcomputing.mapreduce;
+package it.unipi.dii.hadoop.mapreduce;
 
-import it.unipi.dii.cloudcomputing.model.BloomFilter;
+import it.unipi.dii.hadoop.model.BloomFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;

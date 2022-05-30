@@ -1,33 +1,34 @@
-package it.unipi.dii.cloudcomputing.model;
+package it.unipi.dii.hadoop.model;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.BitSet;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import static org.apache.hadoop.util.hash.Hash.MURMUR_HASH;
 
-import java.util.Objects;
-
-public class BloomFilter implements Writable, Comparable<BloomFilter> {
+public class BloomFilterPositions implements Writable, Comparable<BloomFilterPositions> {
     private int length;
     private int kHash;
-    private BitSet bitset;
+    private Set<Integer> bitset;
     private static final int hashType = MURMUR_HASH;
 
-    public  BloomFilter (){}
+    public BloomFilterPositions(){}
 
-    public BloomFilter(int length, int kHash){
-        bitset = new BitSet(length);
+    public BloomFilterPositions(int length, int kHash){
+        bitset = new HashSet<>();
         this.length = length;
         this.kHash = kHash;
     }
 
-    public BloomFilter(BloomFilter bf){
-        this.bitset = (BitSet) bf.bitset.clone();
+    public BloomFilterPositions(BloomFilterPositions bf){
+        this.bitset = bf.bitset;
         this.length = bf.length;
         this.kHash = bf.kHash;
+
     }
 
     public void add(String id){
@@ -35,12 +36,12 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
-            bitset.set(Math.abs(seed % length));
+            bitset.add(Math.abs(seed % length));
         }
     }
 
-    public void or(BitSet input){
-        bitset.or(input);
+    public void or(Set<Integer> input){
+        bitset.addAll(input);
     }
 
     public boolean find(String id){
@@ -48,17 +49,21 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
-            if(!bitset.get(Math.abs(seed % length)))
+            if(!bitset.contains(Math.abs(seed % length)))
                 return false;
         }
         return true;
     }
 
-    public BitSet getBitset() {
+    public static BloomFilterPositions copy(final BloomFilterPositions bf){
+        return new BloomFilterPositions(bf.length, bf.kHash);
+    }
+
+    public Set<Integer> getBitset() {
         return bitset;
     }
 
-    public void setBitset(BitSet bitset) {
+    public void setBitset(Set<Integer> bitset) {
         this.bitset = bitset;
     }
 
@@ -71,7 +76,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     }
 
     public int getLength() {
-        return bitset.length();
+        return bitset.size();
     }
 
 
@@ -79,7 +84,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BloomFilter that = (BloomFilter) o;
+        BloomFilterPositions that = (BloomFilterPositions) o;
         return kHash == that.kHash &&  Objects.equals(bitset, that.bitset);
     }
 
@@ -90,11 +95,15 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
 
     @Override
     public String toString() {
-        return bitset.toString();
+        return "BloomFilter{" +
+                "bitset=" + bitset +
+                ", kHash=" + kHash +
+                ", length=" + length +
+                '}';
     }
 
     @Override
-    public int compareTo(BloomFilter bf) {
+    public int compareTo(BloomFilterPositions bf) {
         if (bf.equals(bitset))
             return 1;
         return 0;
@@ -106,10 +115,10 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         dataOutput.writeInt(this.kHash);
 
         // https://stackoverflow.com/questions/18406592/how-to-have-bit-string-in-hadoop
-        long[] longs = bitset.toLongArray();
-        dataOutput.writeInt(longs.length);
-        for (int i = 0; i < longs.length; i++) {
-            dataOutput.writeLong(longs[i]);
+        int[] ints = bitset.stream().mapToInt(Integer::intValue).toArray();
+        dataOutput.writeInt(ints.length);
+        for (int i = 0; i < ints.length; i++) {
+            dataOutput.writeInt(ints[i]);
         }
     }
 
@@ -119,17 +128,17 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         kHash = dataInput.readInt();
 
         // https://stackoverflow.com/questions/18406592/how-to-have-bit-string-in-hadoop
-        long[] longs = new long[dataInput.readInt()];
-        for (int i = 0; i < longs.length; i++) {
-            longs[i] = dataInput.readLong();
+        int[] ints = new int[dataInput.readInt()];
+        for (int i = 0; i < ints.length; i++) {
+            ints[i] = dataInput.readInt();
         }
 
-        bitset = BitSet.valueOf(longs);
+        bitset = Arrays.stream(ints).boxed().collect(Collectors.toSet());
     }
 
     public static void main(String[] args) throws Exception
     {
-        BloomFilter b = new BloomFilter(100,5);
+        BloomFilterPositions b = new BloomFilterPositions(100,5);
         b.add("tt10334");
         b.add("tt14334");
         b.add("tt10354");
@@ -142,7 +151,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         b.write(out);
 
         DataInput in = new DataInputStream(new ByteArrayInputStream(byteOutput.toByteArray()));
-        BloomFilter deserialized = new BloomFilter();
+        BloomFilterPositions deserialized = new BloomFilterPositions();
         deserialized.readFields(in);
 
         System.out.println(b.toString());

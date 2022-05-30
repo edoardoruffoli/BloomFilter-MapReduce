@@ -1,6 +1,6 @@
-package it.unipi.dii.cloudcomputing.mapreduce;
+package it.unipi.dii.hadoop.mapreduce;
 
-import it.unipi.dii.cloudcomputing.model.BloomFilter;
+import it.unipi.dii.hadoop.model.BloomFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
