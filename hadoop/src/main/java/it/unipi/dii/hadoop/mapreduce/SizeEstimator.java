@@ -10,18 +10,14 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
 
 public class SizeEstimator {
     public static class CountMapper extends Mapper<Object, Text, IntWritable, IntWritable>{
         private int roundRating;
         private int[] counter = new int[11];
 
-        // public void setup()
-
         public void map(Object key, Text value, Context context) {
-            double rating = Double.parseDouble(value.toString().split("\t")[1]);
-            roundRating = (int) Math.round(rating);
+            roundRating = (int) Math.round(Double.parseDouble(value.toString().split("\t")[1]));
             counter[roundRating]++;
         }
 
@@ -33,6 +29,7 @@ public class SizeEstimator {
 
     public static class CountSumReducer extends Reducer<IntWritable,IntWritable,IntWritable,IntWritable> {
         private IntWritable result = new IntWritable();
+
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
@@ -43,24 +40,21 @@ public class SizeEstimator {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        Configuration conf = new Configuration();
-        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-        if (otherArgs.length < 2) {
-            System.err.println("Usage: ratecount <in> [<in>...] <out>");
-            System.exit(2);
-        }
-        Job job = Job.getInstance(conf, "rate count");
+    public static boolean main(Job job) throws Exception {
+        Configuration conf = job.getConfiguration();
+
         job.setJarByClass(SizeEstimator.class);
+
         job.setMapperClass(CountMapper.class);
         job.setReducerClass(CountSumReducer.class);
+
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
-        for (int i = 0; i < otherArgs.length - 1; ++i) {
-            FileInputFormat.addInputPath(job, new Path(otherArgs[i]));
-        }
-        FileOutputFormat.setOutputPath(job,
-                new Path(otherArgs[otherArgs.length - 1]));
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+        // Input and Output path files
+        FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.countByRating")));
+
+        return job.waitForCompletion(conf.getBoolean("verbose", true));
     }
 }

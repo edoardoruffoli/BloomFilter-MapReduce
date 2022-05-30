@@ -20,7 +20,6 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class ParameterValidation {
-    private static final Log LOG = LogFactory.getLog(ParameterValidation.class);
 
     public static class ParameterValidationMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
         ArrayList<BloomFilter> bloomFilters = new ArrayList<BloomFilter>();
@@ -30,7 +29,7 @@ public class ParameterValidation {
             BloomFilter tmp = new BloomFilter();
 
             for (int i = 0; i <= 10; i++) {
-                Path inputFilePath = new Path(context.getConfiguration().get("validation.input")
+                Path inputFilePath = new Path(context.getConfiguration().get("output.bloomfilter")
                         + "/filter" + i);
                 FileSystem fs = FileSystem.get(context.getConfiguration());
 
@@ -76,89 +75,8 @@ public class ParameterValidation {
         }
     }
 
-    private static int[] readFalsePositive(Configuration conf, String pathString)
-            throws IOException, FileNotFoundException {
-        int[] falsePositiveCounter = new int[11];
-        FileSystem hdfs = FileSystem.get(conf);
-        FileStatus[] status = hdfs.listStatus(new Path(pathString));
-
-        for (int i = 0; i < status.length; i++) {
-            //Read the falsePositive from the hdfs
-            if(!status[i].getPath().toString().endsWith("_SUCCESS")) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(hdfs.open(status[i].getPath())));
-
-                br.lines().forEach(
-                        (line)->{
-                            String[] keyValueSplit = line.split("\t");
-                            int rating = Integer.parseInt(keyValueSplit[0]);
-                            int nFalsePositive = Integer.parseInt(keyValueSplit[1]);
-                            falsePositiveCounter[rating] = nFalsePositive;
-                        }
-                );
-            br.close();
-            }
-        }
-
-        //Delete temp directory
-        //hdfs.delete(new Path(pathString), true);
-
-        return falsePositiveCounter;
-    }
-
-    private static int[] readSizes(Configuration conf, String pathString)
-            throws IOException, FileNotFoundException {
-        int[] sizes = new int[11];
-        FileSystem hdfs = FileSystem.get(conf);
-        BufferedReader br = new BufferedReader(new InputStreamReader(hdfs.open(new Path(pathString))));
-
-        br.lines().forEach(
-                (line) -> {
-                    String[] keyValueSplit = line.split("\t");
-                    int rating = Integer.parseInt(keyValueSplit[0]);
-                    int size = Integer.parseInt(keyValueSplit[1]);
-                    sizes[rating] = size;
-                }
-        );
-        br.close();
-
-        return sizes;
-    }
-
-    private static void finalize(Configuration conf, double[] falsePositiveRate, String output)
-            throws IOException {
-        FileSystem hdfs = FileSystem.get(conf);
-        FSDataOutputStream dos = hdfs.create(new Path(output + "/false-positive.txt"), true);
-        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(dos));
-
-        //Write the result in a unique file
-        for(int i = 0; i < falsePositiveRate.length; i++) {
-            br.write(String.valueOf(falsePositiveRate[i]));
-            br.newLine();
-        }
-
-        br.close();
-        hdfs.close();
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-        Configuration conf = new Configuration();
-        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-        if (otherArgs.length != 3) {
-            System.err.println("Usage: ParameterValidation <input> <output>");
-            System.exit(1);
-        }
-        System.out.println("args[0]: <input>="  + otherArgs[0]);
-        System.out.println("args[1]: <input>="  + otherArgs[1]);
-        System.out.println("args[2]: <output>=" + otherArgs[2]);
-
-        Job job = Job.getInstance(conf, "ParameterValidation");
-
-        // Input Parameter
-        job.getConfiguration().set("validation.input", args[1]);
-
-        // Output Parameter
-        String validationOutput = args[1] + Path.SEPARATOR + "validation";
-        job.getConfiguration().set("validation.output", validationOutput);
+    public static boolean main(Job job) throws IOException, InterruptedException, ClassNotFoundException {
+        Configuration conf = job.getConfiguration();
 
         job.setJarByClass(ParameterValidation.class);
         job.setMapperClass(ParameterValidation.ParameterValidationMapper.class);
@@ -169,29 +87,12 @@ public class ParameterValidation {
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
 
-        FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-        FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+        FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("falsePositiveCount")));
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
-        if(!job.waitForCompletion(true)) {
-            System.exit(1);
-        }
-
-        int[] falsePositiveCounter = readFalsePositive(conf, otherArgs[2]);
-        int[] sizes = readSizes(conf, "sizes.txt");
-        double[] falsePositiveRate = new double[11];
-        int tot = 0;
-
-        for (int i=0; i<=10; i++)
-            tot += sizes[i];
-
-        for (int i=0; i<=10; i++) {
-            falsePositiveRate[i] = (double) 100*falsePositiveCounter[i]/(tot-sizes[i]);
-        }
-
-        finalize(conf, falsePositiveRate, otherArgs[2]);
-
+        return job.waitForCompletion(conf.getBoolean("verbose", true));
     }
 }

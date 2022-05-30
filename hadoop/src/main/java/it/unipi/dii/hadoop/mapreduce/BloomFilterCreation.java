@@ -31,8 +31,8 @@ public class BloomFilterCreation {
             int m, k;
 
             for (int i = 0; i <= 10; i++) {
-                m = Integer.parseInt(context.getConfiguration().get("m_"+i));
-                k = Integer.parseInt(context.getConfiguration().get("k_"+i));
+                m = Integer.parseInt(context.getConfiguration().get("input.filter.m_"+i));
+                k = Integer.parseInt(context.getConfiguration().get("input.filter.k_"+i));
                 bloomFilters.add(i, new BloomFilter(m, k));
             }
         }
@@ -72,58 +72,34 @@ public class BloomFilterCreation {
         }
     }
 
-    public static void main(String[] args) throws Exception
+    public static boolean main(Job job) throws Exception
     {
-        Configuration conf = new Configuration();
-        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-        if (otherArgs.length != 2) {
-            System.err.println("Usage: BloomFilterCreation <input> <output>");
-            System.exit(1);
-        }
-        System.out.println("args[0]: <input>="  + otherArgs[0]);
-        System.out.println("args[1]: <output>=" + otherArgs[1]);
-
-        Job job = Job.getInstance(conf, "BloomFilterCreation");
-
-        double p = 0.05;
-
-        FileInputStream fis = new FileInputStream("sizes.txt");
-        Scanner sc = new Scanner(fis);
-        int i = 0;
-        while (sc.hasNextLine()){
-            String[] values = sc.nextLine().split("\t");
-            int n = Integer.parseInt(values[1]);
-            int m = (int) Math.round((-n*Math.log(p))/(Math.log(2)*Math.log(2)));
-            int k = (int) Math.round((m*Math.log(2))/n);
-
-            job.getConfiguration().set("m_"+i, String.valueOf(m));
-            job.getConfiguration().set("k_"+i, String.valueOf(k));
-            i++;
-        }
+        Configuration conf = job.getConfiguration();
 
         // Output parameter (sent to Reducer who will write the bloom filter to file system)
-        String filterOutput = args[1] + Path.SEPARATOR + "filter";
+        String filterOutput = conf.get("output.bloomfilter") + Path.SEPARATOR + "filter";
         job.getConfiguration().set("filter.output", filterOutput);
 
         job.setJarByClass(BloomFilterCreation.class);
         job.setMapperClass(BloomFilterCreationMapper.class);
         job.setReducerClass(BloomFilterOrReducer.class);
 
-        job.setNumReduceTasks(3);
+        job.setNumReduceTasks(3);   // conf.getInt(numReducer);
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(BloomFilter.class);
 
-        FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+
+        // Input and Output path files
+        FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.bloomfilter")));
 
         /*job.setInputFormatClass(NLineInputFormat.class);
         NLineInputFormat.addInputPath(job, new Path(otherArgs[0]));
         job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 800000);*/
-        FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
-
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        return job.waitForCompletion(conf.getBoolean("verbose", true));
     }
 }
