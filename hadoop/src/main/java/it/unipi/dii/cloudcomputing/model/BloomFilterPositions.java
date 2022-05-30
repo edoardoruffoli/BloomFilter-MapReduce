@@ -1,4 +1,4 @@
-package it.unipi.dii.cloudcomputing;
+package it.unipi.dii.cloudcomputing.model;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;

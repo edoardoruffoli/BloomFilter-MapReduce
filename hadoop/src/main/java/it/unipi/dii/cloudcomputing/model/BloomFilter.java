@@ -1,4 +1,4 @@
-package it.unipi.dii.cloudcomputing;
+package it.unipi.dii.cloudcomputing.model;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -16,9 +16,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     private BitSet bitset;
     private static final int hashType = MURMUR_HASH;
 
-    public  BloomFilter (){
-
-    }
+    public  BloomFilter (){}
 
     public BloomFilter(int length, int kHash){
         bitset = new BitSet(length);
@@ -30,7 +28,6 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         this.bitset = (BitSet) bf.bitset.clone();
         this.length = bf.length;
         this.kHash = bf.kHash;
-
     }
 
     public void add(String id){

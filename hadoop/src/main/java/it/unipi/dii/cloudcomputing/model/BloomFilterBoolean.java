@@ -1,9 +1,9 @@
-package it.unipi.dii.cloudcomputing;
+package it.unipi.dii.cloudcomputing.model;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.BitSet;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;
 

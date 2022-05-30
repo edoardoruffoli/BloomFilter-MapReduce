@@ -1,32 +1,28 @@
 package it.unipi.dii.cloudcomputing.mapreduce;
 
-import it.unipi.dii.cloudcomputing.BloomFilter;
+import it.unipi.dii.cloudcomputing.model.BloomFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class BloomFilterCreation {
+
     public static class BloomFilterCreationMapper extends Mapper<Object, Text, IntWritable, BloomFilter> {
         ArrayList<BloomFilter> bloomFilters = new ArrayList<BloomFilter>();
         private int roundRating;
@@ -56,7 +52,7 @@ public class BloomFilterCreation {
     public static class BloomFilterOrReducer extends Reducer<IntWritable, BloomFilter, IntWritable, BloomFilter> {
         private BloomFilter result;
 
-        public void reduce(IntWritable key, Iterable<BloomFilter> values, Context context) throws IOException, InterruptedException {
+        public void reduce(IntWritable key, Iterable<BloomFilter> values, Context context) throws IOException {
             result = new BloomFilter(values.iterator().next());
             while(values.iterator().hasNext()) {
                  result.or(values.iterator().next().getBitset());
@@ -71,7 +67,6 @@ public class BloomFilterCreation {
                 result.write(fsdos);
 
             } catch (Exception e) {
-                System.out.println(outputFilePath.toString());
                 throw new IOException("Error while writing bloom filter to file system.", e);
             }
         }
@@ -90,7 +85,7 @@ public class BloomFilterCreation {
 
         Job job = Job.getInstance(conf, "BloomFilterCreation");
 
-        double p = 0.01;
+        double p = 0.05;
 
         FileInputStream fis = new FileInputStream("sizes.txt");
         Scanner sc = new Scanner(fis);
