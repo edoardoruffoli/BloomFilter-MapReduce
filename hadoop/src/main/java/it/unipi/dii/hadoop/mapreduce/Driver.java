@@ -1,20 +1,18 @@
 package it.unipi.dii.hadoop.mapreduce;
 
+import it.unipi.dii.hadoop.LocalConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.web.resources.Param;
 import org.apache.hadoop.mapreduce.Job;
 
 import java.io.*;
-import java.util.Scanner;
 
 public class Driver {
 
-    private static int[] readFalsePositive(Configuration conf, String pathString)
-            throws IOException, FileNotFoundException {
+    private static int[] readFalsePositive(Configuration conf, String pathString) throws IOException {
         int[] falsePositiveCounter = new int[11];
         FileSystem hdfs = FileSystem.get(conf);
         FileStatus[] status = hdfs.listStatus(new Path(pathString));
@@ -42,8 +40,7 @@ public class Driver {
         return falsePositiveCounter;
     }
 
-    private static int[] readSizes(Configuration conf, String pathString)
-            throws IOException, FileNotFoundException {
+    private static int[] readSizes(Configuration conf, String pathString) throws IOException {
         int[] sizes = new int[11];
         FileSystem hdfs = FileSystem.get(conf);
         FileStatus[] status = hdfs.listStatus(new Path(pathString));
@@ -86,42 +83,51 @@ public class Driver {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        //LocalConfiguration localConfig = new LocalConfiguration("config.ini");
 
-        String BASE_DIR = "output" /*localConfig.getOutputPath()*/ + "/";
+        // Timers
+        long start = 0, end = 0, startBC = 0, endBC = 0;
 
-        conf.set("input.dataset", "film-ratings.txt"/*localConfig.getInputPath()*/);
-        conf.setDouble("p", 0.01 /*localConfig.getInputPath()*/);
-        conf.set("output.bloomfilter", BASE_DIR + "bloomFilters");
-        conf.set("output.countByRating", BASE_DIR + "countByRating");
-        conf.set("falsePositiveCount", BASE_DIR + "falsePositive");
+        LocalConfiguration localConfig = new LocalConfiguration("config.properties");
 
-        //conf.setBoolean("verbose", false);
+        String BASE_DIR = localConfig.getOutputPath() + "/";
+
+        conf.set("input.dataset", localConfig.getInputPath());
+        conf.setDouble("p", localConfig.getP());
+        conf.set("output.bloomfilter", BASE_DIR + "bloom-filters");
+        conf.set("output.count-by-rating", BASE_DIR + "parameter-calibration");
+        conf.set("output.false-positive-count", BASE_DIR + "parameter-validation");
+
+        conf.setBoolean("verbose", localConfig.getVerbose());
 
         FileSystem fs = FileSystem.get(conf);
         fs.delete(new Path(BASE_DIR), true);
+
+        // Start timer
+        start = System.currentTimeMillis();
 
         /* Parameter Calibration Stage
             - input : dataset
             - output: count by rating value
          */
         Job parameterCalibration = Job.getInstance(conf, "Parameter Calibration");
-        if (!SizeEstimator.main(parameterCalibration) ) {
+        if (!ParameterCalibration.main(parameterCalibration) ) {
             fs.close();
             System.exit(1);
         }
 
         // Parameter Calibration
-        int[] sizes = readSizes(conf, conf.get("output.countByRating"));
+        int[] sizes = readSizes(conf, conf.get("output.count-by-rating"));
 
         for (int i=0; i<sizes.length; i++) {
             int n = sizes[i];
             int m = (int) Math.round((-n*Math.log(Double.parseDouble(conf.get("p"))))/(Math.log(2)*Math.log(2)));
             int k = (int) Math.round((m*Math.log(2))/n);
 
-            conf.set("input.filter.m_"+i, String.valueOf(m));
-            conf.set("input.filter.k_"+i, String.valueOf(k));
+            conf.set("input.filter_" + i + ".m", String.valueOf(m));
+            conf.set("input.filter_" + i + ".k", String.valueOf(k));
         }
+
+        startBC = System.currentTimeMillis();
 
         /* Bloom Filter Creation Stage
             - input : dataset
@@ -133,6 +139,8 @@ public class Driver {
             System.exit(1);
         }
 
+        endBC = System.currentTimeMillis();
+
         /* Parameter Validation Stage
             - input : Bloom Filters
             - output: False Positive Count
@@ -143,7 +151,7 @@ public class Driver {
             System.exit(1);
         }
 
-        int[] falsePositiveCounter = readFalsePositive(conf, conf.get("falsePositiveCount"));
+        int[] falsePositiveCounter = readFalsePositive(conf, conf.get("output.false-positive-count"));
 
         double[] falsePositiveRate = new double[11];
         int tot = 0;
@@ -155,7 +163,11 @@ public class Driver {
             falsePositiveRate[i] = (double) 100*falsePositiveCounter[i]/(tot-sizes[i]);
         }
 
-        finalize(conf, falsePositiveRate, conf.get("falsePositiveCount"));
+        finalize(conf, falsePositiveRate, conf.get("output.false-positive-count"));
 
+        end = System.currentTimeMillis();
+
+        System.out.println("Total Job execution time: " + (end - start) + " ms");
+        System.out.println("Bloom Filter Creation Job execution time: " + (endBC - startBC) + " ms");
     }
 }

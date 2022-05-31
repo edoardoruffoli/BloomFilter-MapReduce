@@ -11,8 +11,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class SizeEstimator {
-    public static class CountMapper extends Mapper<Object, Text, IntWritable, IntWritable>{
+public class ParameterCalibration {
+    public static class CountByRatingMapper extends Mapper<Object, Text, IntWritable, IntWritable>{
         private int roundRating;
         private int[] counter = new int[11];
 
@@ -43,9 +43,9 @@ public class SizeEstimator {
     public static boolean main(Job job) throws Exception {
         Configuration conf = job.getConfiguration();
 
-        job.setJarByClass(SizeEstimator.class);
+        job.setJarByClass(ParameterCalibration.class);
 
-        job.setMapperClass(CountMapper.class);
+        job.setMapperClass(CountByRatingMapper.class);
         job.setReducerClass(CountSumReducer.class);
 
         job.setOutputKeyClass(IntWritable.class);
@@ -53,7 +53,7 @@ public class SizeEstimator {
 
         // Input and Output path files
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
-        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.countByRating")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.count-by-rating")));
 
         return job.waitForCompletion(conf.getBoolean("verbose", true));
     }

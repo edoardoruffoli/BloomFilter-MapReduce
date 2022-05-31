@@ -14,12 +14,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class BloomFilterCreation {
 
@@ -31,8 +28,8 @@ public class BloomFilterCreation {
             int m, k;
 
             for (int i = 0; i <= 10; i++) {
-                m = Integer.parseInt(context.getConfiguration().get("input.filter.m_"+i));
-                k = Integer.parseInt(context.getConfiguration().get("input.filter.k_"+i));
+                m = Integer.parseInt(context.getConfiguration().get("input.filter_" + i + ".m"));
+                k = Integer.parseInt(context.getConfiguration().get("input.filter_" + i + ".k"));
                 bloomFilters.add(i, new BloomFilter(m, k));
             }
         }

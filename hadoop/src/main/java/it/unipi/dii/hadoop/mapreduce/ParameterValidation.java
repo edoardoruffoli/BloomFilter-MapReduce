@@ -1,8 +1,6 @@
 package it.unipi.dii.hadoop.mapreduce;
 
 import it.unipi.dii.hadoop.model.BloomFilter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.IntWritable;
@@ -14,7 +12,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -88,7 +85,7 @@ public class ParameterValidation {
         job.setOutputValueClass(IntWritable.class);
 
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
-        FileOutputFormat.setOutputPath(job, new Path(conf.get("falsePositiveCount")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.false-positive-count")));
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
