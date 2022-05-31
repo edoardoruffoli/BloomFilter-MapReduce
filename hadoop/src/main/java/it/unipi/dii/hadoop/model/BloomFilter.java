@@ -126,30 +126,4 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
 
         bitset = BitSet.valueOf(longs);
     }
-
-    public static void main(String[] args) throws Exception
-    {
-        BloomFilter b = new BloomFilter(100,5);
-        b.add("tt10334");
-        b.add("tt14334");
-        b.add("tt10354");
-        b.add("tt20334");
-        b.add("tt14334");
-        b.add("tt19334");
-
-        ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
-        DataOutput out = new DataOutputStream(byteOutput);
-        b.write(out);
-
-        DataInput in = new DataInputStream(new ByteArrayInputStream(byteOutput.toByteArray()));
-        BloomFilter deserialized = new BloomFilter();
-        deserialized.readFields(in);
-
-        System.out.println(b.toString());
-
-        System.out.println(deserialized.toString());
-
-        System.out.println(b.find("tt10334"));
-        System.out.println(b.find("tt50334"));
-    }
 }

@@ -53,7 +53,7 @@ public class ParameterCalibration {
 
         // Input and Output path files
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
-        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.count-by-rating")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.parameter-calibration")));
 
         return job.waitForCompletion(conf.getBoolean("verbose", true));
     }

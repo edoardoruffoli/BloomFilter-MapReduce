@@ -74,7 +74,7 @@ public class BloomFilterCreation {
         Configuration conf = job.getConfiguration();
 
         // Output parameter (sent to Reducer who will write the bloom filter to file system)
-        String filterOutput = conf.get("output.bloomfilter") + Path.SEPARATOR + "filter";
+        String filterOutput = conf.get("output.bloom-filters") + Path.SEPARATOR + "filter";
         job.getConfiguration().set("filter.output", filterOutput);
 
         job.setJarByClass(BloomFilterCreation.class);
@@ -91,7 +91,7 @@ public class BloomFilterCreation {
 
         // Input and Output path files
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
-        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.bloomfilter")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.bloom-filters")));
 
         /*job.setInputFormatClass(NLineInputFormat.class);
         NLineInputFormat.addInputPath(job, new Path(otherArgs[0]));

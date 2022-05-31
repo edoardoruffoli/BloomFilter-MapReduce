@@ -4,14 +4,14 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class LocalConfiguration {
-    // [Dataset]
+    // Dataset
     private String inputPath;
     private String outputPath;
 
-    // [Bloom Filter]
+    // Bloom Filter
     private double p;
 
-    // [Hadoop]
+    // Hadoop
     private boolean verbose;
 
     public LocalConfiguration(String path) {
@@ -24,7 +24,7 @@ public class LocalConfiguration {
             inputPath = prop.getProperty("inputPath");
             outputPath = prop.getProperty("outputPath");
             p = Double.parseDouble(prop.getProperty("p"));
-            verbose = Boolean.getBoolean(prop.getProperty("verbose"));
+            verbose = Boolean.parseBoolean(prop.getProperty("verbose"));
         }
         catch(Exception e){
             e.printStackTrace();

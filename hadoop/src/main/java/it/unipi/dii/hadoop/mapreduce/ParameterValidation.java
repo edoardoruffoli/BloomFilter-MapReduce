@@ -26,7 +26,7 @@ public class ParameterValidation {
             BloomFilter tmp = new BloomFilter();
 
             for (int i = 0; i <= 10; i++) {
-                Path inputFilePath = new Path(context.getConfiguration().get("output.bloomfilter")
+                Path inputFilePath = new Path(context.getConfiguration().get("output.bloom-filters")
                         + "/filter" + i);
                 FileSystem fs = FileSystem.get(context.getConfiguration());
 
@@ -85,7 +85,7 @@ public class ParameterValidation {
         job.setOutputValueClass(IntWritable.class);
 
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
-        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.false-positive-count")));
+        FileOutputFormat.setOutputPath(job, new Path(conf.get("output.parameter-validation")));
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);

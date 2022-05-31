@@ -9,11 +9,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
 import java.io.*;
+import java.util.Arrays;
 
 public class Driver {
 
-    private static int[] readFalsePositive(Configuration conf, String pathString) throws IOException {
-        int[] falsePositiveCounter = new int[11];
+    private static double[] readJobOutput(Configuration conf, String pathString) throws IOException {
+        double[] tmp = new double[11];
         FileSystem hdfs = FileSystem.get(conf);
         FileStatus[] status = hdfs.listStatus(new Path(pathString));
 
@@ -25,55 +26,27 @@ public class Driver {
                 br.lines().forEach(
                         (line)->{
                             String[] keyValueSplit = line.split("\t");
-                            int rating = Integer.parseInt(keyValueSplit[0]);
-                            int nFalsePositive = Integer.parseInt(keyValueSplit[1]);
-                            falsePositiveCounter[rating] = nFalsePositive;
+                            int key = Integer.parseInt(keyValueSplit[0]);
+                            int value = Integer.parseInt(keyValueSplit[1]);
+                            tmp[key] = value;
                         }
                 );
                 br.close();
             }
         }
-
-        //Delete temp directory
-        //hdfs.delete(new Path(pathString), true);
-
-        return falsePositiveCounter;
+        return tmp;
     }
 
-    private static int[] readSizes(Configuration conf, String pathString) throws IOException {
-        int[] sizes = new int[11];
-        FileSystem hdfs = FileSystem.get(conf);
-        FileStatus[] status = hdfs.listStatus(new Path(pathString));
-
-        for (int i = 0; i < status.length; i++) {
-            //Read the falsePositive from the hdfs
-            if (!status[i].getPath().toString().endsWith("_SUCCESS")) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(hdfs.open(status[i].getPath())));
-
-                br.lines().forEach(
-                        (line) -> {
-                            String[] keyValueSplit = line.split("\t");
-                            int rating = Integer.parseInt(keyValueSplit[0]);
-                            int size = Integer.parseInt(keyValueSplit[1]);
-                            sizes[rating] = size;
-                        }
-                );
-                br.close();
-            }
-        }
-
-        return sizes;
-    }
-
-    private static void finalize(Configuration conf, double[] falsePositiveRate, String output)
+    private static void writeJobResults(Configuration conf, String array, String outputPath)
             throws IOException {
         FileSystem hdfs = FileSystem.get(conf);
-        FSDataOutputStream dos = hdfs.create(new Path(output + "/false-positive.txt"), true);
+        FSDataOutputStream dos = hdfs.create(new Path(outputPath), true);
         BufferedWriter br = new BufferedWriter(new OutputStreamWriter(dos));
 
         //Write the result in a unique file
-        for(int i = 0; i < falsePositiveRate.length; i++) {
-            br.write(String.valueOf(falsePositiveRate[i]));
+        String[] values = array.split(",");
+        for(int i = 0; i < values.length; i++) {
+            br.write(values[i]);
             br.newLine();
         }
 
@@ -85,17 +58,17 @@ public class Driver {
         Configuration conf = new Configuration();
 
         // Timers
-        long start = 0, end = 0, startBC = 0, endBC = 0;
+        long start, end, startBC, endBC;
 
         LocalConfiguration localConfig = new LocalConfiguration("config.properties");
 
         String BASE_DIR = localConfig.getOutputPath() + "/";
 
         conf.set("input.dataset", localConfig.getInputPath());
-        conf.setDouble("p", localConfig.getP());
-        conf.set("output.bloomfilter", BASE_DIR + "bloom-filters");
-        conf.set("output.count-by-rating", BASE_DIR + "parameter-calibration");
-        conf.set("output.false-positive-count", BASE_DIR + "parameter-validation");
+        conf.setDouble("input.p", localConfig.getP());
+        conf.set("output.parameter-calibration", BASE_DIR + "parameter-calibration");
+        conf.set("output.bloom-filters", BASE_DIR + "bloom-filters");
+        conf.set("output.parameter-validation", BASE_DIR + "parameter-validation");
 
         conf.setBoolean("verbose", localConfig.getVerbose());
 
@@ -115,18 +88,19 @@ public class Driver {
             System.exit(1);
         }
 
-        // Parameter Calibration
-        int[] sizes = readSizes(conf, conf.get("output.count-by-rating"));
+        // Compute parameters based on count by rating
+        double[] countByRating = readJobOutput(conf, conf.get("output.parameter-calibration"));
 
-        for (int i=0; i<sizes.length; i++) {
-            int n = sizes[i];
-            int m = (int) Math.round((-n*Math.log(Double.parseDouble(conf.get("p"))))/(Math.log(2)*Math.log(2)));
+        for (int i=0; i<countByRating.length; i++) {
+            double n = countByRating[i];
+            int m = (int) Math.round((-n*Math.log(Double.parseDouble(conf.get("input.p"))))/(Math.log(2)*Math.log(2)));
             int k = (int) Math.round((m*Math.log(2))/n);
 
             conf.set("input.filter_" + i + ".m", String.valueOf(m));
             conf.set("input.filter_" + i + ".k", String.valueOf(k));
         }
 
+        // Start Bloom Filter Creation Timer
         startBC = System.currentTimeMillis();
 
         /* Bloom Filter Creation Stage
@@ -139,6 +113,7 @@ public class Driver {
             System.exit(1);
         }
 
+        // Stop Bloom Filter Creation Timer
         endBC = System.currentTimeMillis();
 
         /* Parameter Validation Stage
@@ -151,19 +126,22 @@ public class Driver {
             System.exit(1);
         }
 
-        int[] falsePositiveCounter = readFalsePositive(conf, conf.get("output.false-positive-count"));
+        double[] falsePositiveCounter = readJobOutput(conf, conf.get("output.parameter-validation"));
+        String outputPath = conf.get("output.parameter-validation") + "/false-positive-count.txt";
+        writeJobResults(conf, Arrays.toString(falsePositiveCounter), outputPath);
 
         double[] falsePositiveRate = new double[11];
-        int tot = 0;
+        double tot = 0;
 
         for (int i=0; i<=10; i++)
-            tot += sizes[i];
+            tot += countByRating[i];
 
         for (int i=0; i<=10; i++) {
-            falsePositiveRate[i] = (double) 100*falsePositiveCounter[i]/(tot-sizes[i]);
+            falsePositiveRate[i] = (double) 100*falsePositiveCounter[i]/(tot-countByRating[i]);
         }
 
-        finalize(conf, falsePositiveRate, conf.get("output.false-positive-count"));
+        outputPath = conf.get("output.parameter-validation") + "/false-positive-rate.txt";
+        writeJobResults(conf, Arrays.toString(falsePositiveRate), outputPath);
 
         end = System.currentTimeMillis();
 
