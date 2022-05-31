@@ -56,7 +56,8 @@ public class BloomFilterCreation {
             }
 
             // Save the final Bloom Filter in the file system
-            Path outputFilePath = new Path(context.getConfiguration().get("filter.output")
+            Path outputFilePath = new Path(context.getConfiguration().get("output.bloom-filters")
+                    + Path.SEPARATOR + "filter"
                     + key.toString());
             FileSystem fs = FileSystem.get(context.getConfiguration());
 
@@ -73,15 +74,11 @@ public class BloomFilterCreation {
     {
         Configuration conf = job.getConfiguration();
 
-        // Output parameter (sent to Reducer who will write the bloom filter to file system)
-        String filterOutput = conf.get("output.bloom-filters") + Path.SEPARATOR + "filter";
-        job.getConfiguration().set("filter.output", filterOutput);
-
         job.setJarByClass(BloomFilterCreation.class);
         job.setMapperClass(BloomFilterCreationMapper.class);
         job.setReducerClass(BloomFilterOrReducer.class);
 
-        job.setNumReduceTasks(3);   // conf.getInt(numReducer);
+        job.setNumReduceTasks(1);   // conf.getInt(numReducer);
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(BloomFilter.class);

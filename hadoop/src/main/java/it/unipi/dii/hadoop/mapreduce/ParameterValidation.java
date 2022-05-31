@@ -20,23 +20,21 @@ public class ParameterValidation {
 
     public static class ParameterValidationMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
         ArrayList<BloomFilter> bloomFilters = new ArrayList<BloomFilter>();
-        private int[] counter = new int[11];
+        private final int[] counter = new int[11];
 
         public void setup(Context context) throws IOException, InterruptedException {
-            BloomFilter tmp = new BloomFilter();
-
             for (int i = 0; i <= 10; i++) {
-                Path inputFilePath = new Path(context.getConfiguration().get("output.bloom-filters")
+                Path bloomFilterCachePath = new Path(context.getConfiguration().get("output.bloom-filters")
                         + "/filter" + i);
                 FileSystem fs = FileSystem.get(context.getConfiguration());
 
-                try (FSDataInputStream fsdis = fs.open(inputFilePath)) {
+                try (FSDataInputStream fsdis = fs.open(bloomFilterCachePath)) {
+                    BloomFilter tmp = new BloomFilter();
                     tmp.readFields(fsdis);
                     bloomFilters.add(i, tmp);
 
                 } catch (Exception e) {
-                    System.out.println(inputFilePath.toString());
-                    throw new IOException("Error while reading bloom filter from file system.", e);
+                    throw new IOException("Error while reading Bloom Filter cache file from file system.", e);
                 }
             }
         }
@@ -46,7 +44,7 @@ public class ParameterValidation {
             int roundRating = (int) Math.round(rating);
 
             for (int i=0; i<=10; i++) {
-                if (i == roundRating)
+                if (roundRating == i)
                     continue;
                 if (bloomFilters.get(i).find(value.toString().split("\t")[0]))
                     counter[i]++;
@@ -61,7 +59,7 @@ public class ParameterValidation {
     }
 
     public static class ParameterValidationReducer extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
-        private IntWritable result = new IntWritable();
+        private final IntWritable result = new IntWritable();
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
@@ -79,7 +77,7 @@ public class ParameterValidation {
         job.setMapperClass(ParameterValidation.ParameterValidationMapper.class);
         job.setReducerClass(ParameterValidation.ParameterValidationReducer.class);
 
-        job.setNumReduceTasks(1);
+        job.setNumReduceTasks(3);
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
