@@ -1,6 +1,9 @@
-package it.unipi.dii.hadoop.mapreduce;
+package it.unipi.dii.hadoop;
 
-import it.unipi.dii.hadoop.LocalConfiguration;
+import it.unipi.dii.hadoop.model.LocalConfiguration;
+import it.unipi.dii.hadoop.mapreduce.BloomFilterCreation;
+import it.unipi.dii.hadoop.mapreduce.ParameterCalibration;
+import it.unipi.dii.hadoop.mapreduce.ParameterValidation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;

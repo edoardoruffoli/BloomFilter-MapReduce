@@ -1,4 +1,4 @@
-package it.unipi.dii.hadoop;
+package it.unipi.dii.hadoop.model;
 
 import java.io.FileInputStream;
 import java.util.Properties;
