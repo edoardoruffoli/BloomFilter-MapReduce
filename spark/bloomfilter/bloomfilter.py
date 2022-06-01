@@ -9,4 +9,4 @@ def array_split(line):
 sc = SparkContext(appName="Bloomfilter", master="local[*]")
 
 rdd_file = sc.textFile("film-ratings.txt").map(array_split)
-print(rdd_file.take(4).collect())
+print(rdd_file.take(4))

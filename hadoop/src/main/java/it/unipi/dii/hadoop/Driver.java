@@ -72,7 +72,8 @@ public class Driver {
 
         conf.set("input.dataset", localConfig.getInputPath());
         conf.setDouble("input.p", localConfig.getP());
-       // conf.setInt("input.num-reducer", localConfig.getNumReducer());
+       // conf.setInt("input.job1-num-reducer", localConfig.getNumReducer());
+        //  conf.setInt("input.job1-num-reducer", localConfig.getNumReducer());
         conf.set("output.parameter-calibration", BASE_DIR + "parameter-calibration");
         conf.set("output.bloom-filters", BASE_DIR + "bloom-filters");
         conf.set("output.parameter-validation", BASE_DIR + "parameter-validation");
