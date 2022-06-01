@@ -1,12 +1,33 @@
-import numpy as np
-from pyspark import SparkContext
+import copy
 
+from bitarray import bitarray
+import mmh3
 
-def array_split(line):
-    np.array(line.split("/t"))
+class Bloomfilter:
+    def __init__(self, length, kHash):
+        self.length = length
+        self.kHash = kHash
+        self.bits = bitarray(length)
 
+    def copy(self):
+        return copy.deepcopy(self)
 
-sc = SparkContext(appName="Bloomfilter", master="local[*]")
+    def add(self, id):
+        seed = 0
+        for i in range(self.kHash):
+            seed = mmh3.hash(id, seed)
+            self.bits[abs(seed % self.length)] = 1
 
-rdd_file = sc.textFile("film-ratings.txt").map(array_split)
-print(rdd_file.take(4))
+    def _or(self, input):
+        self.bits = self.bits | input.bits
+
+    def print(self):
+        print(self.bits.tolist())
+
+    def find(self, id):
+        seed = 0
+        for i in range(self.kHash):
+            seed = mmh3.hash(id, seed)
+            if self.bits[abs(seed % self.length)] == 0:
+                return False
+        return True
