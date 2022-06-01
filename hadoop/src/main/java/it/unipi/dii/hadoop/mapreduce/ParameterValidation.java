@@ -19,10 +19,10 @@ import java.util.ArrayList;
 public class ParameterValidation {
 
     public static class ParameterValidationMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
-        ArrayList<BloomFilter> bloomFilters = new ArrayList<BloomFilter>();
+        ArrayList<BloomFilter> bloomFilters = new ArrayList<>();
         private final int[] counter = new int[11];
 
-        public void setup(Context context) throws IOException, InterruptedException {
+        public void setup(Context context) throws IOException {
             for (int i = 0; i <= 10; i++) {
                 Path bloomFilterCachePath = new Path(context.getConfiguration().get("output.bloom-filters")
                         + "/filter" + i);
@@ -74,10 +74,11 @@ public class ParameterValidation {
         Configuration conf = job.getConfiguration();
 
         job.setJarByClass(ParameterValidation.class);
+
         job.setMapperClass(ParameterValidation.ParameterValidationMapper.class);
         job.setReducerClass(ParameterValidation.ParameterValidationReducer.class);
 
-        job.setNumReduceTasks(3);
+        job.setNumReduceTasks(conf.getInt("input.job2-n-reducer", 1));
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);

@@ -21,7 +21,7 @@ import java.util.ArrayList;
 public class BloomFilterCreation {
 
     public static class BloomFilterCreationMapper extends Mapper<Object, Text, IntWritable, BloomFilter> {
-        ArrayList<BloomFilter> bloomFilters = new ArrayList<BloomFilter>();
+        ArrayList<BloomFilter> bloomFilters = new ArrayList<>();
         private int roundRating;
 
         public void setup(Context context) {
@@ -70,15 +70,15 @@ public class BloomFilterCreation {
         }
     }
 
-    public static boolean main(Job job) throws Exception
-    {
+    public static boolean main(Job job) throws Exception {
         Configuration conf = job.getConfiguration();
 
         job.setJarByClass(BloomFilterCreation.class);
+
         job.setMapperClass(BloomFilterCreationMapper.class);
         job.setReducerClass(BloomFilterOrReducer.class);
 
-        job.setNumReduceTasks(1);   // conf.getInt(numReducer);
+        job.setNumReduceTasks(conf.getInt("input.job1-n-reducer", 1));
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(BloomFilter.class);

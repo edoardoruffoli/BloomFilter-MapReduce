@@ -28,7 +28,17 @@ public class BloomFilterTest extends TestCase {
     }
 
     public void testFind2() {
-        System.out.println("Find Test 2 value: tt50334");
+        System.out.println("Find Test 2 value: tt14334");
+        assertTrue(b1.find("tt14334"));
+    }
+
+    public void testFind3() {
+        System.out.println("Find Test 3 value: tt10354");
+        assertTrue(b1.find("tt10354"));
+    }
+
+    public void testFind5() {
+        System.out.println("Find Test 5 value: tt50334");
         assertFalse(b1.find("tt50334"));
     }
 

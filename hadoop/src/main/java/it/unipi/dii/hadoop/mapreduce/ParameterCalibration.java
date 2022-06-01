@@ -48,6 +48,8 @@ public class ParameterCalibration {
         job.setMapperClass(CountByRatingMapper.class);
         job.setReducerClass(CountSumReducer.class);
 
+        job.setNumReduceTasks(conf.getInt("input.job0-n-reducer", 1));
+
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
 
