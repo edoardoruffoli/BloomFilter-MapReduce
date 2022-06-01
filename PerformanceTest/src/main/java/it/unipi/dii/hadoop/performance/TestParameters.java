@@ -29,7 +29,7 @@ public class TestParameters {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, InterruptedException {
         String cmd =  "hadoop jar hadoop-1.0-SNAPSHOT.jar it.unipi.dii.hadoop.mapreduce.Driver";
 
         for (int i0=0; i0<nReducerJob0.length; i0++) {
@@ -40,6 +40,11 @@ public class TestParameters {
                     System.out.print("nReducerJob2 = " + nReducerJob2[i2] + ", ");
 
                     setConfigFile("config.properties", nReducerJob0[i0], nReducerJob1[i1], nReducerJob2[i2]);
+
+                    Process process = Runtime.getRuntime().exec(cmd);
+
+                    process.waitFor();
+
 
                 }
             }
