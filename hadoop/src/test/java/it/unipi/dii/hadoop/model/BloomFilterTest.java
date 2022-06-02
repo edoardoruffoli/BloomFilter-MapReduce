@@ -6,7 +6,7 @@ import java.io.*;
 
 public class BloomFilterTest extends TestCase {
     private BloomFilter b1 = new BloomFilter(100,5);
-    private BloomFilter b2;
+    private BloomFilter b2 = new BloomFilter(0,5);
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -20,6 +20,16 @@ public class BloomFilterTest extends TestCase {
 
     protected void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    public void testAdd1() {
+        System.out.println("Add Test 1 bf:1 value: tt10334");
+        assertTrue(b1.add("tt10334"));
+    }
+
+    public void testAdd2() {
+        System.out.println("Add Test 2 bf:2 value: tt10334");
+        assertFalse(b2.add("tt10334"));
     }
 
     public void testFind1() {

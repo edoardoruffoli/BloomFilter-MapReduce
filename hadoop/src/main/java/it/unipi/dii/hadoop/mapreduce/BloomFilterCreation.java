@@ -78,7 +78,7 @@ public class BloomFilterCreation {
         job.setMapperClass(BloomFilterCreationMapper.class);
         job.setReducerClass(BloomFilterOrReducer.class);
 
-        job.setNumReduceTasks(conf.getInt("input.job1-n-reducer", 1));
+        job.setNumReduceTasks(conf.getInt("job1-n-reducers", 1));
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(BloomFilter.class);

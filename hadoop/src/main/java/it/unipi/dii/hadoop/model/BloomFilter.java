@@ -30,13 +30,16 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
         this.kHash = bf.kHash;
     }
 
-    public void add(String id){
+    public boolean add(String id){
+        if (length == 0)
+            return false;
 
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
             bitset.set(Math.abs(seed % length));
         }
+        return true;
     }
 
     public void or(BitSet input){

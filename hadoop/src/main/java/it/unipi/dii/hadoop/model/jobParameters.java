@@ -3,18 +3,21 @@ package it.unipi.dii.hadoop.model;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-public class LocalConfiguration {
+public class jobParameters {
     // Dataset
     private String inputPath;
     private String outputPath;
 
-    // Bloom Filter
+    // Bloom Filters
     private double p;
 
     // Hadoop
+    private int nReducersJob0;
+    private int nReducersJob1;
+    private int nReducersJob2;
     private boolean verbose;
 
-    public LocalConfiguration(String path) {
+    public jobParameters(String path) {
         Properties prop = new Properties();
 
         try{
@@ -24,6 +27,9 @@ public class LocalConfiguration {
             inputPath = prop.getProperty("inputPath");
             outputPath = prop.getProperty("outputPath");
             p = Double.parseDouble(prop.getProperty("p"));
+            nReducersJob0 = Integer.parseInt(prop.getProperty("job0-nReducers"));
+            nReducersJob1 = Integer.parseInt(prop.getProperty("job1-nReducers"));
+            nReducersJob2 = Integer.parseInt(prop.getProperty("job2-nReducers"));
             verbose = Boolean.parseBoolean(prop.getProperty("verbose"));
         }
         catch(Exception e){
@@ -51,6 +57,12 @@ public class LocalConfiguration {
     public double getP() {
         return p;
     }
+
+    public int getnReducersJob0() { return nReducersJob0; }
+
+    public int getnReducersJob1() { return nReducersJob1; }
+
+    public int getnReducersJob2() { return nReducersJob2; }
 
     public boolean getVerbose() {
         return verbose;

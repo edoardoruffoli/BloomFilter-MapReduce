@@ -1,6 +1,6 @@
 package it.unipi.dii.hadoop;
 
-import it.unipi.dii.hadoop.model.LocalConfiguration;
+import it.unipi.dii.hadoop.model.jobParameters;
 import it.unipi.dii.hadoop.mapreduce.BloomFilterCreation;
 import it.unipi.dii.hadoop.mapreduce.ParameterCalibration;
 import it.unipi.dii.hadoop.mapreduce.ParameterValidation;
@@ -9,7 +9,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.*;
 
 import java.io.*;
 import java.util.Arrays;
@@ -22,7 +22,6 @@ public class Driver {
         FileStatus[] status = hdfs.listStatus(new Path(pathString));
 
         for (FileStatus fileStatus : status) {
-            //Read the falsePositive from the hdfs
             if (!fileStatus.getPath().toString().endsWith("_SUCCESS")) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(hdfs.open(fileStatus.getPath())));
 
@@ -59,33 +58,53 @@ public class Driver {
         hdfs.close();
     }
 
+    /**
+     * Function that prints on the stdout the counters of the job specified as a parameter.
+     * @param job
+     * @throws IOException
+     */
+    private static void printJobCounters(Job job) throws IOException {
+        Counters counters = job.getCounters();
+
+        // Use > as token to split different job counters
+        System.out.print(">" + job.getJobName());
+
+        for (CounterGroup group : counters) {
+            System.out.println("\t" + group.getDisplayName());
+            for (Counter counter : group) {
+                System.out.println("\t" + counter.getDisplayName() + ": " + counter.getValue());
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        /*if (args.length != 1) {
+            System.out.println("Invalid format for the command line arguments");
+            System.out.println("Usage: <single/test>");
+            System.exit(1);
+        }*/
         Configuration conf = new Configuration();
 
-        // Timers: general execution timer and Bloom Filter creation execution timer
-        long start, end, startBC, endBC;
+        // User-Specified jobs parameters
+        jobParameters jobParameters = new jobParameters("config.properties");
 
-        // Local User-Specified configurations parameters
-        LocalConfiguration localConfig = new LocalConfiguration("config.properties");
+        String BASE_DIR = jobParameters.getOutputPath() + "/";
 
-        String BASE_DIR = localConfig.getOutputPath() + "/";
+        conf.set("input.dataset", jobParameters.getInputPath());
+        conf.setDouble("input.p", jobParameters.getP());
 
-        conf.set("input.dataset", localConfig.getInputPath());
-        conf.setDouble("input.p", localConfig.getP());
-       // conf.setInt("input.job1-num-reducer", localConfig.getNumReducer());
-        //  conf.setInt("input.job1-num-reducer", localConfig.getNumReducer());
         conf.set("output.parameter-calibration", BASE_DIR + "parameter-calibration");
         conf.set("output.bloom-filters", BASE_DIR + "bloom-filters");
         conf.set("output.parameter-validation", BASE_DIR + "parameter-validation");
 
-        conf.setBoolean("verbose", localConfig.getVerbose());
+        conf.setInt("job0-n-reducers", jobParameters.getnReducersJob0());
+        conf.setInt("job1-n-reducers", jobParameters.getnReducersJob1());
+        conf.setInt("job2-n-reducers", jobParameters.getnReducersJob2());
+        conf.setBoolean("verbose", jobParameters.getVerbose());
 
         // Clean HDFS workspace
         FileSystem fs = FileSystem.get(conf);
         fs.delete(new Path(BASE_DIR), true);
-
-        // Start general execution timer
-        start = System.currentTimeMillis();
 
         /* Parameter Calibration Stage
             - input : Dataset
@@ -96,6 +115,7 @@ public class Driver {
             fs.close();
             System.exit(1);
         }
+        printJobCounters(parameterCalibration);
 
         // Compute and set Bloom Filter parameters based on the result of the Parameter Calibration stage
         double[] countByRating = readJobOutput(conf, conf.get("output.parameter-calibration"));
@@ -109,9 +129,6 @@ public class Driver {
             conf.set("input.filter_" + i + ".k", String.valueOf(k));
         }
 
-        // Start Bloom Filter creation execution timer
-        startBC = System.currentTimeMillis();
-
         /* Bloom Filter Creation Stage
             - input : Dataset
             - output: Bloom Filters
@@ -121,9 +138,7 @@ public class Driver {
             fs.close();
             System.exit(1);
         }
-
-        // Stop Bloom Filter creation execution timer
-        endBC = System.currentTimeMillis();
+        printJobCounters(bloomFilterCreation);
 
         /* Parameter Validation Stage
             - input : Bloom Filters
@@ -134,6 +149,7 @@ public class Driver {
             fs.close();
             System.exit(1);
         }
+        printJobCounters(parameterValidation);
 
         // Write the Parameter Validation Stage output on file
         double[] falsePositiveCounter = readJobOutput(conf, conf.get("output.parameter-validation"));
@@ -154,11 +170,5 @@ public class Driver {
         // Write the false positive rates on file
         outputPath = conf.get("output.parameter-validation") + "/false-positive-rate.txt";
         writeJobResults(conf, Arrays.toString(falsePositiveRate), outputPath);
-
-        // Stop general execution timer
-        end = System.currentTimeMillis();
-
-        System.out.println("Total Job execution time: " + (end - start) + " ms");
-        System.out.println("Bloom Filter Creation Job execution time: " + (endBC - startBC) + " ms");
     }
 }

@@ -78,7 +78,7 @@ public class ParameterValidation {
         job.setMapperClass(ParameterValidation.ParameterValidationMapper.class);
         job.setReducerClass(ParameterValidation.ParameterValidationReducer.class);
 
-        job.setNumReduceTasks(conf.getInt("input.job2-n-reducer", 1));
+        job.setNumReduceTasks(conf.getInt("job2-n-reducers", 1));
 
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
