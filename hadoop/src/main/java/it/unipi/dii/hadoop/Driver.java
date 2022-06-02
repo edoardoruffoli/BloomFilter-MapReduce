@@ -1,6 +1,6 @@
 package it.unipi.dii.hadoop;
 
-import it.unipi.dii.hadoop.model.jobParameters;
+import it.unipi.dii.hadoop.model.JobParameters;
 import it.unipi.dii.hadoop.mapreduce.BloomFilterCreation;
 import it.unipi.dii.hadoop.mapreduce.ParameterCalibration;
 import it.unipi.dii.hadoop.mapreduce.ParameterValidation;
@@ -86,7 +86,7 @@ public class Driver {
         Configuration conf = new Configuration();
 
         // User-Specified jobs parameters
-        jobParameters jobParameters = new jobParameters("config.properties");
+        JobParameters jobParameters = new JobParameters("config.properties");
 
         String BASE_DIR = jobParameters.getOutputPath() + "/";
 
@@ -100,6 +100,7 @@ public class Driver {
         conf.setInt("job0-n-reducers", jobParameters.getnReducersJob0());
         conf.setInt("job1-n-reducers", jobParameters.getnReducersJob1());
         conf.setInt("job2-n-reducers", jobParameters.getnReducersJob2());
+        conf.setInt("job1-n-line-split", jobParameters.getnLineSplitJob1());
         conf.setBoolean("verbose", jobParameters.getVerbose());
 
         // Clean HDFS workspace

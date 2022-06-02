@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
@@ -83,16 +83,15 @@ public class BloomFilterCreation {
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(BloomFilter.class);
 
-        job.setInputFormatClass(TextInputFormat.class);
+        job.setInputFormatClass(NLineInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
         // Input and Output path files
         FileInputFormat.addInputPath(job, new Path(conf.get("input.dataset")));
         FileOutputFormat.setOutputPath(job, new Path(conf.get("output.bloom-filters")));
 
-        /*job.setInputFormatClass(NLineInputFormat.class);
-        NLineInputFormat.addInputPath(job, new Path(otherArgs[0]));
-        job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 800000);*/
+        job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap",
+                Integer.parseInt(conf.get("job1-n-line-split")));
 
         return job.waitForCompletion(conf.getBoolean("verbose", true));
     }

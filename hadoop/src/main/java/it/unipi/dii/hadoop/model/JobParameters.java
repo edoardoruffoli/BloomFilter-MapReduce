@@ -3,7 +3,7 @@ package it.unipi.dii.hadoop.model;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-public class jobParameters {
+public class JobParameters {
     // Dataset
     private String inputPath;
     private String outputPath;
@@ -15,9 +15,10 @@ public class jobParameters {
     private int nReducersJob0;
     private int nReducersJob1;
     private int nReducersJob2;
+    private int nLineSplitJob1;
     private boolean verbose;
 
-    public jobParameters(String path) {
+    public JobParameters(String path) {
         Properties prop = new Properties();
 
         try{
@@ -30,6 +31,7 @@ public class jobParameters {
             nReducersJob0 = Integer.parseInt(prop.getProperty("job0-nReducers"));
             nReducersJob1 = Integer.parseInt(prop.getProperty("job1-nReducers"));
             nReducersJob2 = Integer.parseInt(prop.getProperty("job2-nReducers"));
+            nLineSplitJob1 = Integer.parseInt(prop.getProperty("job1-nLineSplit"));
             verbose = Boolean.parseBoolean(prop.getProperty("verbose"));
         }
         catch(Exception e){
@@ -41,7 +43,27 @@ public class jobParameters {
 
     private void validate() {
         if (p <= 0 || p > 1) {
-            System.err.println("LocalConfiguration validation error: value of p not valid");
+            System.err.println("JobParameters validation error: value of p not valid");
+            System.exit(1);
+        }
+
+        if (nReducersJob0 <= 0) {
+            System.err.println("JobParameters validation error: value of nReducersJob0 not valid");
+            System.exit(1);
+        }
+
+        if (nReducersJob1 <= 0) {
+            System.err.println("JobParameters validation error: value of nReducersJob1 not valid");
+            System.exit(1);
+        }
+
+        if (nReducersJob2 <= 0) {
+            System.err.println("JobParameters validation error: value of nReducersJob2 not valid");
+            System.exit(1);
+        }
+
+        if (nLineSplitJob1 <= 0) {
+            System.err.println("JobParameters validation error: value of nLineSplitJob2 not valid");
             System.exit(1);
         }
     }
@@ -63,6 +85,8 @@ public class jobParameters {
     public int getnReducersJob1() { return nReducersJob1; }
 
     public int getnReducersJob2() { return nReducersJob2; }
+
+    public int getnLineSplitJob1() { return nLineSplitJob1; }
 
     public boolean getVerbose() {
         return verbose;
