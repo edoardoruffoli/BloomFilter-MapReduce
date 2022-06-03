@@ -15,19 +15,34 @@ def array_split(line):
     return items[0], int(Decimal(items[1]).quantize(0, ROUND_HALF_UP))
 
 
-def bloomfilter_parmeters(n, p):
+def init_bloomfilter(n, p):
     m = int(round((-n*math.log(p))/(math.log(2)**2)))
     k = int(round(m*math.log(2)/n))
     return m, k
 
 
+def bloomfilter_population(iterator):
+    bloomfilters = [Bloomfilter(m, k) for m, k in broadcast_bf.value]
+    print(bloomfilters)
+    return
+
+
 sc = SparkContext(appName="Bloomfilter", master="local[*]")
 
 rdd_file = sc.textFile("film-raiting.txt").map(array_split)
-counts = rdd_file.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x+y)
-print(counts.collect())
+
+# creation
+counts = rdd_file.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x+y).sortByKey()
+bloomfilters_param = [init_bloomfilter(n, p) for rating, n in counts.collect()]
+broadcast_bf = sc.broadcast(bloomfilters_param)
 
 
-bloomfilters = [Bloomfilter(bloomfilter_parmeters(n, p)) for n in counts]
+# population
+rdd_chunk = sc.textFile("film-raiting.txt").mapPartitions(bloomfilter_population)
+
+
+
+
+
 
 
