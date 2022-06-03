@@ -23,13 +23,12 @@ def init_bloomfilter(n, p):
 
 def bloomfilter_population(iterator):
     bloomfilters = [Bloomfilter(m, k) for m, k in broadcast_bf.value]
-    print(bloomfilters)
-    return
+    return bloomfilters
 
 
 sc = SparkContext(appName="Bloomfilter", master="local[*]")
 
-rdd_file = sc.textFile("film-raiting.txt").map(array_split)
+rdd_file = sc.textFile("film-rating.txt").map(array_split)
 
 # creation
 counts = rdd_file.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x+y).sortByKey()
@@ -38,9 +37,9 @@ broadcast_bf = sc.broadcast(bloomfilters_param)
 
 
 # population
-rdd_chunk = sc.textFile("film-raiting.txt").mapPartitions(bloomfilter_population)
+rdd_chunk = sc.textFile("film-rating.txt").mapPartitions(bloomfilter_population)
 
-
+print(rdd_chunk.take(4))
 
 
 

@@ -3,6 +3,7 @@ import copy
 from bitarray import bitarray
 import mmh3
 
+
 class Bloomfilter:
     def __init__(self, length, kHash):
         self.length = length
