@@ -4,7 +4,7 @@ from bitarray import bitarray
 import mmh3
 
 
-class Bloomfilter:
+class Bloomfilter(object):
     def __init__(self, length, kHash):
         self.length = length
         self.kHash = kHash
@@ -19,8 +19,9 @@ class Bloomfilter:
             seed = mmh3.hash(id, seed)
             self.bits[abs(seed % self.length)] = 1
 
-    def _or(self, input):
+    def bitwise_or(self, input):
         self.bits = self.bits | input.bits
+        return self
 
     def print(self):
         print(self.bits.tolist())
