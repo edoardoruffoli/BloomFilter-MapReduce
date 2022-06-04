@@ -26,45 +26,49 @@ def bloomfilter_population(lines):
     for line in lines:
         (id, rate) = array_split(line)
         bloomfilters[rate-1].add(id)
+
     rate = range(1, 11)
     return zip(rate, bloomfilters)
 
 
-def bloomfilter_validation(lines):
-    counter = [0 for i in range(10)]
-    for line in lines:
-        (filmId, rate) = array_split(line)
-        for bf in broadcast_bf.value:
-            if rate != bf[0]:
-                result = bf[1].find(filmId)
-                if result is True:
-                    counter[rate-1] = counter[rate-1] + 1
-
+def bloomfilter_validation(line):
+    counter = []
+    #for line in lines:
+    (film_id, rate) = array_split(line)
+    for bf in broadcast_bf.value:
+        if rate != bf[0]:
+            result = bf[1].find(film_id)
+            if result is True:
+                counter.append(tuple((rate, 1)))
     return counter
 
 
 if __name__ == "__main__":
     sc = SparkContext(appName="Bloomfilter", master="local[*]")
-
     rdd_file = sc.textFile("film-rating.txt").map(array_split)
+    print("\n\n\n  EXECUTION  \n\n\n")
 
     # creation
     counts = rdd_file.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x + y).sortByKey()
     bloomfilters_param = [init_bloomfilter(n, p) for rating, n in counts.collect()]
     broadcast_bf_param = sc.broadcast(bloomfilters_param)
-    print(broadcast_bf_param.value)
 
     # population
     rdd_chunk = sc.textFile("film-rating.txt").mapPartitions(bloomfilter_population)
-    rdd_bloomfilter = rdd_chunk.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2))
-    print(rdd_bloomfilter)
+    rdd_bloomfilter = rdd_chunk.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
 
     # validation
     broadcast_bf = sc.broadcast(rdd_bloomfilter.collect())
-    rdd_counter = sc.textFile("film-rating.txt").mapPartitions(bloomfilter_validation)
-    print(rdd_counter)
-    #rdd_p = rdd_counter.reduce(lambda counter1, counter2: [sum(x) for x in zip(counter1, counter2)])
-   # print(rdd_p)
+    rdd_counter = sc.textFile("film-rating.txt").flatMap(bloomfilter_validation) #mapPartition
+    print(rdd_counter.countByKey())
+    rdd_p = rdd_counter.reduceByKey(lambda x, y: x + y).sortByKey()
+
+    print(rdd_p.collect())
+
+
+
+    # rdd_p = rdd_counter.reduce(lambda counter1, counter2: [sum(x) for x in zip(counter1, counter2)])
+    # print(rdd_p)
 
 
 

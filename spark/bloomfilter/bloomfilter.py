@@ -24,7 +24,7 @@ class Bloomfilter(object):
         return self
 
     def print(self):
-        print(self.bits.tolist())
+        print(self.bits)
 
     def find(self, id):
         seed = 0
