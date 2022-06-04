@@ -33,3 +33,7 @@ class Bloomfilter(object):
             if self.bits[abs(seed % self.length)] == 0:
                 return False
         return True
+
+
+if __name__ == "__main__":
+    bf = [Bloomfilter(20, 3)]

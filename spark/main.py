@@ -39,13 +39,13 @@ def bloomfilter_validation(line):
         if rate != bf[0]:
             result = bf[1].find(film_id)
             if result is True:
-                counter.append(tuple((rate, 1)))
+                counter.append(tuple((bf[0], 1)))
     return counter
 
 
 if __name__ == "__main__":
     sc = SparkContext(appName="Bloomfilter", master="local[*]")
-    rdd_file = sc.textFile("film-ratings.txt").map(array_split)
+    rdd_file = sc.textFile("film-rating.txt").map(array_split)
     print("\n\n\n  EXECUTION  \n\n\n")
 
     # creation
@@ -54,21 +54,20 @@ if __name__ == "__main__":
     broadcast_bf_param = sc.broadcast(bloomfilters_param)
 
     # population
-    rdd_chunk = sc.textFile("film-ratings.txt").mapPartitions(bloomfilter_population)
+    rdd_chunk = sc.textFile("film-rating.txt").mapPartitions(bloomfilter_population)
     rdd_bloomfilter = rdd_chunk.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
 
     # validation
     broadcast_bf = sc.broadcast(rdd_bloomfilter.collect())
-    rdd_counter = sc.textFile("film-rating.txt").flatMap(bloomfilter_validation) #mapPartition
-    print(rdd_counter.countByKey())
+    rdd_counter = sc.textFile("film-rating.txt").flatMap(bloomfilter_validation)
     rdd_p = rdd_counter.reduceByKey(lambda x, y: x + y).sortByKey()
 
     print(rdd_p.collect())
 
-
-
-    # rdd_p = rdd_counter.reduce(lambda counter1, counter2: [sum(x) for x in zip(counter1, counter2)])
-    # print(rdd_p)
-
+    p_rate = []
+    for i in range(10):
+        p_rate.append(rdd_p.collect()[i][1]/(rdd_file.count() - counts.collect()[i][1]))
+    # p_rate = [x[0]/x[1] for x in zip(rdd_p.collect()[1], counts.collect()[1])]
+    print(p_rate)
 
 
