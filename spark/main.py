@@ -45,7 +45,7 @@ def bloomfilter_validation(line):
 
 if __name__ == "__main__":
     sc = SparkContext(appName="Bloomfilter", master="local[*]")
-    rdd_file = sc.textFile("film-rating.txt").map(array_split)
+    rdd_file = sc.textFile("film-ratings.txt").map(array_split)
     print("\n\n\n  EXECUTION  \n\n\n")
 
     # creation
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     broadcast_bf_param = sc.broadcast(bloomfilters_param)
 
     # population
-    rdd_chunk = sc.textFile("film-rating.txt").mapPartitions(bloomfilter_population)
+    rdd_chunk = sc.textFile("film-ratings.txt").mapPartitions(bloomfilter_population)
     rdd_bloomfilter = rdd_chunk.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
 
     # validation
