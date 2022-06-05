@@ -3,7 +3,6 @@ target/
 *.iml
 env/
 venv/
-*.txt
 !requirements.txt
 output*
 __pycache__/
