@@ -1,40 +1,41 @@
 import math
+import sys
+import time
 
-import numpy as np
 from pyspark import SparkContext
 from decimal import Decimal, ROUND_HALF_UP
-import bloomfilter
 from bloomfilter.bloomfilter import Bloomfilter
+import configparser
 
-p = 0.01
 
-
-def array_split(line):
+def id_rate_split(line):
     items = line.split("\t")
-    #return items[0], int(round(float(items[1]) + 0.1, 0))
     return items[0], int(Decimal(items[1]).quantize(0, ROUND_HALF_UP))
 
 
 def init_bloomfilter(n, p):
-    m = int(round((-n*math.log(p))/(math.log(2)**2)))
-    k = int(round(m*math.log(2)/n))
+    m = int(round((-n * math.log(p)) / (math.log(2) ** 2)))
+    k = int(round(m * math.log(2) / n))
     return m, k
 
 
-def bloomfilter_population(lines):
-    bloomfilters = [Bloomfilter(m, k) for m, k in broadcast_bf_param.value]
+def insert_in_bloomfilters(lines):
+    # setup
+    bloomfilters = [Bloomfilter(m, k) for m, k in broadcast_bf_params.value]
+
+    # computation
     for line in lines:
-        (id, rate) = array_split(line)
-        bloomfilters[rate-1].add(id)
+        (id, rate) = id_rate_split(line)
+        bloomfilters[rate - 1].add(id)
 
     rate = range(1, 11)
     return zip(rate, bloomfilters)
 
 
-def bloomfilter_validation(line):
+def validate_bloomfilter(line):
     counter = []
-    #for line in lines:
-    (film_id, rate) = array_split(line)
+    # for line in lines:
+    (film_id, rate) = id_rate_split(line)
     for bf in broadcast_bf.value:
         if rate != bf[0]:
             result = bf[1].find(film_id)
@@ -44,27 +45,38 @@ def bloomfilter_validation(line):
 
 
 if __name__ == "__main__":
-    sc = SparkContext(appName="Bloomfilter", master="local[*]")
-    rdd_file = sc.textFile("film-rating.txt")
-    print("\n\n\n  EXECUTION  \n\n\n")
+    start_time = time.time()
 
-    # creation
-    rdd_record = rdd_file.map(array_split)
-    counts = rdd_record.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x + y).sortByKey()
-    bloomfilters_param = [init_bloomfilter(n, p) for rating, n in counts.collect()]
-    broadcast_bf_param = sc.broadcast(bloomfilters_param)
+    config = configparser.ConfigParser()
+    config.read('config.properties')
 
-    # population
-    rdd_chunk = rdd_file.mapPartitions(bloomfilter_population)
-    rdd_bloomfilter = rdd_chunk.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
+    INPUT_PATH = config.get('Dataset', 'inputPath')
+    OUTPUT_PATH = config.get('Dataset', 'outputPath')
 
-    # validation
-    broadcast_bf = sc.broadcast(rdd_bloomfilter.collect())
-    rdd_counter = rdd_file.flatMap(bloomfilter_validation)
-    rdd_p = rdd_counter.reduceByKey(lambda x, y: x + y).sortByKey()
+    p = float(config.get('Bloom Filter', 'p'))
 
-    p_rate = []
-    for i in range(10):
-        p_rate.append(rdd_p.collect()[i][1]/(rdd_file.count() - counts.collect()[i][1]))
-    print(p_rate)
+    sc = SparkContext(appName="BloomFilter", master="local[*]")
+    rdd_input = sc.textFile(INPUT_PATH)
 
+    # Parameter Calibration stage
+    rdd_films = rdd_input.map(id_rate_split)
+    counts_by_rating = rdd_films.map(lambda x: (x[1], 1)).reduceByKey(lambda x, y: x + y).sortByKey()
+
+    # Bloom Filter Creation stage
+    bf_params = [init_bloomfilter(n, p) for rating, n in counts_by_rating.collect()]
+    broadcast_bf_params = sc.broadcast(bf_params)
+    rdd_partial_bf = rdd_input.mapPartitions(insert_in_bloomfilters)
+    rdd_final_bf = rdd_partial_bf.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
+
+    # Parameter Validation Stage
+    broadcast_bf = sc.broadcast(rdd_final_bf.collect())
+    rdd_counter = rdd_input.flatMap(validate_bloomfilter)
+    rdd_false_positive_count = rdd_counter.reduceByKey(lambda x, y: x + y).sortByKey()
+
+    with open(OUTPUT_PATH, "w") as f:
+        for i in range(10):
+            false_positive_rate = rdd_false_positive_count.collect()[i][1]/(rdd_input.count()-counts_by_rating.collect()[i][1])
+            f.write(str(i+1) + "\t" + str(false_positive_rate) + "\n")
+
+    execution_time = time.time() - start_time
+    print("\nexecution time:", execution_time, "s")
