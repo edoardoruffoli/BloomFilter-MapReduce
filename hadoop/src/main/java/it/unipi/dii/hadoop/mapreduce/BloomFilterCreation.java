@@ -27,7 +27,7 @@ public class BloomFilterCreation {
         public void setup(Context context) {
             int m, k;
 
-            for (int i = 0; i <= 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 m = Integer.parseInt(context.getConfiguration().get("input.filter_" + i + ".m"));
                 k = Integer.parseInt(context.getConfiguration().get("input.filter_" + i + ".k"));
                 bloomFilters.add(i, new BloomFilter(m, k));
@@ -36,12 +36,12 @@ public class BloomFilterCreation {
 
         public void map(Object key, Text value, Context context) {
             roundRating = (int) Math.round(Double.parseDouble(value.toString().split("\t")[1]));
-            bloomFilters.get(roundRating).add(value.toString().split("\t")[0]);
+            bloomFilters.get(roundRating-1).add(value.toString().split("\t")[0]);
         }
 
         public void cleanup(Context context) throws IOException, InterruptedException {
-            for (int i = 0; i <= 10; i++) {
-                context.write(new IntWritable(i), bloomFilters.get(i));
+            for (int i = 0; i < 10; i++) {
+                context.write(new IntWritable(i+1), bloomFilters.get(i));
             }
         }
     }

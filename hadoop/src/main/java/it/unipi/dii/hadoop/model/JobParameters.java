@@ -28,10 +28,10 @@ public class JobParameters {
             inputPath = prop.getProperty("inputPath");
             outputPath = prop.getProperty("outputPath");
             p = Double.parseDouble(prop.getProperty("p"));
-            nReducersJob0 = Integer.parseInt(prop.getProperty("job0-nReducers"));
-            nReducersJob1 = Integer.parseInt(prop.getProperty("job1-nReducers"));
-            nReducersJob2 = Integer.parseInt(prop.getProperty("job2-nReducers"));
-            nLineSplitJob1 = Integer.parseInt(prop.getProperty("job1-nLineSplit"));
+            nReducersJob0 = Integer.parseInt(prop.getProperty("job0-n-reducers"));
+            nReducersJob1 = Integer.parseInt(prop.getProperty("job1-n-reducers"));
+            nReducersJob2 = Integer.parseInt(prop.getProperty("job2-n-reducers"));
+            nLineSplitJob1 = Integer.parseInt(prop.getProperty("job1-n-line-split"));
             verbose = Boolean.parseBoolean(prop.getProperty("verbose"));
         }
         catch(Exception e){

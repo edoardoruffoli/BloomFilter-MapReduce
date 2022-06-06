@@ -20,12 +20,12 @@ public class ParameterValidation {
 
     public static class ParameterValidationMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
         ArrayList<BloomFilter> bloomFilters = new ArrayList<>();
-        private final int[] counter = new int[11];
+        private final int[] counter = new int[10];
 
         public void setup(Context context) throws IOException {
-            for (int i = 0; i <= 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 Path bloomFilterCachePath = new Path(context.getConfiguration().get("output.bloom-filters")
-                        + "/filter" + i);
+                        + "/filter" + (i+1));
                 FileSystem fs = FileSystem.get(context.getConfiguration());
 
                 try (FSDataInputStream fsdis = fs.open(bloomFilterCachePath)) {
@@ -43,8 +43,8 @@ public class ParameterValidation {
             double rating = Double.parseDouble(value.toString().split("\t")[1]);
             int roundRating = (int) Math.round(rating);
 
-            for (int i=0; i<=10; i++) {
-                if (roundRating == i)
+            for (int i=0; i<10; i++) {
+                if (roundRating == (i+1))
                     continue;
                 if (bloomFilters.get(i).find(value.toString().split("\t")[0]))
                     counter[i]++;
@@ -52,8 +52,8 @@ public class ParameterValidation {
         }
 
         public void cleanup(Context context) throws IOException, InterruptedException {
-            for (int i = 0; i <= 10; i++) {
-                context.write(new IntWritable(i), new IntWritable(counter[i]));
+            for (int i = 0; i < 10; i++) {
+                context.write(new IntWritable(i+1), new IntWritable(counter[i]));
             }
         }
     }

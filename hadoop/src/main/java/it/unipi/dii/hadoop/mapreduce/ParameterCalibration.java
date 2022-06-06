@@ -14,16 +14,16 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class ParameterCalibration {
     public static class CountByRatingMapper extends Mapper<Object, Text, IntWritable, IntWritable>{
         private int roundRating;
-        private int[] counter = new int[11];
+        private int[] counter = new int[10];
 
         public void map(Object key, Text value, Context context) {
             roundRating = (int) Math.round(Double.parseDouble(value.toString().split("\t")[1]));
-            counter[roundRating]++;
+            counter[roundRating-1]++;
         }
 
         public void cleanup(Context context) throws IOException, InterruptedException {
             for (int i=0; i<counter.length; i++)
-                context.write(new IntWritable(i), new IntWritable(counter[i]));
+                context.write(new IntWritable(i+1), new IntWritable(counter[i]));
         }
     }
 

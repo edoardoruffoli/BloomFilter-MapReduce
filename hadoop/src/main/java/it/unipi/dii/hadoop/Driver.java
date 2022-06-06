@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class Driver {
 
     private static double[] readJobOutput(Configuration conf, String pathString) throws IOException {
-        double[] tmp = new double[11];
+        double[] tmp = new double[10];
         FileSystem hdfs = FileSystem.get(conf);
         FileStatus[] status = hdfs.listStatus(new Path(pathString));
 
@@ -30,7 +30,7 @@ public class Driver {
                             String[] keyValueSplit = line.split("\t");
                             int key = Integer.parseInt(keyValueSplit[0]);
                             int value = Integer.parseInt(keyValueSplit[1]);
-                            tmp[key] = value;
+                            tmp[key-1] = value;
                         }
                 );
                 br.close();
@@ -47,12 +47,15 @@ public class Driver {
 
         // Trim the values
         array = array.replace("[", "")
-             .replace("]", "");
+                .replace(" ", "")
+                .replace("]", "");
         String[] values = array.split(",");
 
+        int rate = 1;
         for (String value : values) {
-            br.write(value);
+            br.write(rate + "\t" + value);
             br.newLine();
+            rate++;
         }
         br.close();
         hdfs.close();
@@ -152,24 +155,20 @@ public class Driver {
         }
         printJobCounters(parameterValidation);
 
-        // Write the Parameter Validation Stage output on file
-        double[] falsePositiveCounter = readJobOutput(conf, conf.get("output.parameter-validation"));
-        String outputPath = conf.get("output.parameter-validation") + "/false-positive-count.txt";
-        writeJobResults(conf, Arrays.toString(falsePositiveCounter), outputPath);
-
         // Compute false positive rate for each rating
-        double[] falsePositiveRate = new double[11];
+        double[] falsePositiveCounter = readJobOutput(conf, conf.get("output.parameter-validation"));
+        double[] falsePositiveRate = new double[10];
         double tot = 0;
 
-        for (int i=0; i<=10; i++)
+        for (int i=0; i<10; i++)
             tot += countByRating[i];
 
-        for (int i=0; i<=10; i++) {
+        for (int i=0; i<10; i++) {
             falsePositiveRate[i] = (double) 100*falsePositiveCounter[i]/(tot-countByRating[i]);
         }
 
         // Write the false positive rates on file
-        outputPath = conf.get("output.parameter-validation") + "/false-positive-rate.txt";
+        String outputPath = conf.get("output.parameter-validation") + "/false-positive-rate.txt";
         writeJobResults(conf, Arrays.toString(falsePositiveRate), outputPath);
     }
 }
