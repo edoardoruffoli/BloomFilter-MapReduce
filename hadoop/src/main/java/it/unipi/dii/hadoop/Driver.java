@@ -15,7 +15,7 @@ import java.io.*;
 import java.util.Arrays;
 
 public class Driver {
-
+    static long startTime;
     private static double[] readJobOutput(Configuration conf, String pathString) throws IOException {
         double[] tmp = new double[10];
         FileSystem hdfs = FileSystem.get(conf);
@@ -80,6 +80,10 @@ public class Driver {
         }
     }
 
+    private static void printExecutionPerformances(){
+        System.out.print("EXECUTION TIME (ms): " + (System.currentTimeMillis()- startTime));
+    }
+
     public static void main(String[] args) throws Exception {
         /*if (args.length != 1) {
             System.out.println("Invalid format for the command line arguments");
@@ -114,6 +118,8 @@ public class Driver {
             - input : Dataset
             - output: Number of films for each rating
          */
+        startTime = System.currentTimeMillis();
+
         Job parameterCalibration = Job.getInstance(conf, "Parameter Calibration");
         if (!ParameterCalibration.main(parameterCalibration) ) {
             fs.close();
@@ -143,6 +149,8 @@ public class Driver {
             System.exit(1);
         }
         printJobCounters(bloomFilterCreation);
+
+        printExecutionPerformances();
 
         /* Parameter Validation Stage
             - input : Bloom Filters
