@@ -55,7 +55,8 @@ if __name__ == "__main__":
 
     p = float(config.get('Bloom Filter', 'p'))
 
-    sc = SparkContext(appName="BloomFilter", master="local[*]")
+    sc = SparkContext(appName="BloomFilter", master="yarn")
+    sc.addPyFile("bloomfilter.zip")
     rdd_input = sc.textFile(INPUT_PATH)
 
     # Parameter Calibration stage
