@@ -16,7 +16,7 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     private BitSet bitset;
     private static final int hashType = MURMUR_HASH;
 
-    public  BloomFilter (){}
+    public BloomFilter(){}
 
     public BloomFilter(int length, int kHash){
         bitset = new BitSet(length);

@@ -7,10 +7,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Test {
-    private static int[] nReducerJob0 = {1, 2, 3};
-    private static int[] nReducerJob1 = {1, 2, 3};
-    private static int[] nLineSplitsJob1 = {800000, 400000, 200000};
-    private static double[] falsePositiveRates = {0.01};
+    private static int[] nReducerJob0 = {2};
+    private static int[] nReducerJob1 = {2};
+    private static int[] nLineSplitsJob1 = {400000};
+    private static double[] falsePositiveRates = {0.01, 0.05, 0.1, 0.2};
     private static int nIterations = 10;
 
     public static void setConfigFile(String path, int nReducerJob0, int nReducerJob1,
@@ -80,9 +80,12 @@ public class Test {
                             iterationResult.put("nLineSplitJob1", nLineSplitsJob1[k]);
                             iterationResult.put("falsePositiveRate", falsePositiveRates[j]);
                             iterationResult.put("executionTime", endTime - startTime);
-                            iterationResult.put("executionTimeJob0", jobTimers[1].split(":")[1].trim());
-                            iterationResult.put("executionTimeJob1", jobTimers[2].split(":")[1].trim());
-                            iterationResult.put("executionTimeJob2", jobTimers[3].split(":")[1].trim());
+                            iterationResult.put("executionTimeJob0",
+                                    Integer.parseInt(jobTimers[1].split(":")[1].trim()));
+                            iterationResult.put("executionTimeJob1",
+                                    Integer.parseInt(jobTimers[2].split(":")[1].trim()));
+                            iterationResult.put("executionTimeJob2",
+                                    Integer.parseInt(jobTimers[3].split(":")[1].trim()));
 
                             results.put(iterationResult);
 
