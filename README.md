@@ -9,6 +9,7 @@ This project consists in the design and implementation of a Bloom Filter for IMD
 
 The repository is organized as follows:
 - *dataset/* contains the IMDb dataset stored in *film_ratings.txt*
+- *docs/* contains the report and the assignment
 - *hadoop/* contains the Hadoop implementation and test
 - *results/* contains testing results and analysis
 - *spark/*  contains the Spark implementation and test
