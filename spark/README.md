@@ -25,7 +25,9 @@ export PYSPARK_PYTHON=./pyspark_venv/bin/python
 zip -r bloomfilter.zip bloomfilter
 ```
 
-6. To launch the Spark application use:
+6. Set the set the desired false positive rate (p) and the job stage parameters in the configuration file `config.properties`
+
+7. To launch the Spark application use:
 ```bash
 spark-submit --archives pyspark_venv.tar.gz#pyspark_venv main.py
 ```
