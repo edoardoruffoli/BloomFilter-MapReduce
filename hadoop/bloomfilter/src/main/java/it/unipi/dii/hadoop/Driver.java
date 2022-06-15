@@ -126,7 +126,6 @@ public class Driver {
 
         // Compute and set Bloom Filter parameters based on the result of the Parameter Calibration stage
         double[] countByRating = readJobOutput(conf, conf.get("output.parameter-calibration"));
-
         for (int i=0; i<countByRating.length; i++) {
             double n = countByRating[i];
             int m = (int) Math.round((-n*Math.log(Double.parseDouble(conf.get("input.p"))))/(Math.log(2)*Math.log(2)));

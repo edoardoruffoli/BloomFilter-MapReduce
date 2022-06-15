@@ -52,7 +52,7 @@ public class BloomFilterCreation {
         public void reduce(IntWritable key, Iterable<BloomFilter> values, Context context) throws IOException {
             result = new BloomFilter(values.iterator().next());
             while(values.iterator().hasNext()) {
-                 result.or(values.iterator().next().getBitset());
+                result.or(values.iterator().next().getBitset());
             }
 
             // Save the final Bloom Filter in the file system

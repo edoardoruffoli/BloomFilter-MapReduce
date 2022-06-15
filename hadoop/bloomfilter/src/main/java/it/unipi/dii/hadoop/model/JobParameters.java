@@ -63,7 +63,7 @@ public class JobParameters {
         }
 
         if (nLineSplitJob1 <= 0) {
-            System.err.println("JobParameters validation error: value of nLineSplitJob2 not valid");
+            System.err.println("JobParameters validation error: value of nLineSplitJob1 not valid");
             System.exit(1);
         }
     }
