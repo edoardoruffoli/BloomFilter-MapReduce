@@ -31,9 +31,6 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     }
 
     public boolean add(String id){
-        if (length == 0)
-            return false;
-
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
@@ -47,8 +44,6 @@ public class BloomFilter implements Writable, Comparable<BloomFilter> {
     }
 
     public boolean find(String id){
-        if (length == 0)
-            return false;
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);

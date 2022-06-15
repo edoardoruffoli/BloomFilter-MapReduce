@@ -32,7 +32,6 @@ public class BloomFilterPositions implements Writable, Comparable<BloomFilterPos
     }
 
     public void add(String id){
-        //if id is not null
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
@@ -45,7 +44,6 @@ public class BloomFilterPositions implements Writable, Comparable<BloomFilterPos
     }
 
     public boolean find(String id){
-        //if id is not null
         int seed = 0;
         for (int i = 0; i < kHash; i++){
             seed = Hash.getInstance(hashType).hash(id.getBytes(StandardCharsets.UTF_8), seed);
