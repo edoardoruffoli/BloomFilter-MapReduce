@@ -69,7 +69,7 @@ if __name__ == "__main__":
     counts_by_rating = rdd_counts_by_rating.collect()
 
     execution_time_stage0 = time.time() - start_time
-    #print("\n> Stage 0 execution time:", execution_time_stage0, "s")
+    print("\n> Stage 0 execution time:", execution_time_stage0, "s")
 
     # Bloom Filter Creation stage
     start_time_stage1 = time.time()
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     rdd_final_bf = rdd_partial_bf.reduceByKey(lambda filter1, filter2: filter1.bitwise_or(filter2)).sortByKey()
 
     execution_time_stage1 = time.time() - start_time_stage1
-    #print("\n> Stage 1 execution time:", execution_time_stage1, "s")
+    print("\n> Stage 1 execution time:", execution_time_stage1, "s")
 
     # Parameter Validation Stage
     start_time_stage2 = time.time()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     rdd_false_positive_count = rdd_counter.reduceByKey(lambda x, y: x + y).sortByKey()
 
     execution_time_stage2 = time.time() - start_time_stage2
-    #print("\n> Stage 2 execution time:", execution_time_stage2, "s")
+    print("\n> Stage 2 execution time:", execution_time_stage2, "s")
 
     false_positive_count = rdd_false_positive_count.collect()
     counts_by_rating = rdd_counts_by_rating.collect()
@@ -102,5 +102,5 @@ if __name__ == "__main__":
             f.write(str(i+1) + "\t" + str(false_positive_rate) + "\n")
 
     execution_time = time.time() - start_time
-    #print("\n> Total execution time:", execution_time, "s")
-    #print(p,",",iter,",",execution_time_stage0,",",execution_time_stage1,",",execution_time_stage2)
+    print("\n> Total execution time:", execution_time, "s")
+    print(p,",",iter,",",execution_time_stage0,",",execution_time_stage1,",",execution_time_stage2)
